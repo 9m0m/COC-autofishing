@@ -20,6 +20,19 @@ import ctypes
 from ctypes import wintypes
 from typing import Optional, Tuple
 
+# Cấu hình UTF-8 cho console Windows để in tiếng Việt không bị lỗi UnicodeEncodeError
+if sys.platform.startswith("win"):
+    try:
+        ctypes.windll.kernel32.SetConsoleOutputCP(65001)
+        ctypes.windll.kernel32.SetConsoleCP(65001)
+    except Exception:
+        pass
+    try:
+        sys.stdout.reconfigure(encoding="utf-8", errors="replace")
+        sys.stderr.reconfigure(encoding="utf-8", errors="replace")
+    except Exception:
+        pass
+
 # Thiết lập DPI Awareness cho Windows để toạ độ chuột và cửa sổ chuẩn xác 100%
 try:
     ctypes.windll.user32.SetProcessDpiAwarenessContext(ctypes.c_void_p(-4))
@@ -522,6 +535,19 @@ def main():
         # Nếu chạy dạng file .exe độc lập, giữ màn hình để người dùng đọc thông tin
         if getattr(sys, "frozen", False):
             print("\nNhấn Enter để đóng cửa sổ...")
+            try:
+                input()
+            except Exception:
+                pass
+
+
+if __name__ == "__main__":
+    try:
+        main()
+    except Exception as e:
+        print(f"\n[LỖI KHỞI ĐỘNG] {e}")
+        if getattr(sys, "frozen", False):
+            print("Nhấn Enter để đóng cửa sổ...")
             try:
                 input()
             except Exception:
