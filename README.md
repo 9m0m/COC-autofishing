@@ -26,9 +26,9 @@ Nếu không muốn cài đặt Python hay thao tác dòng lệnh, bạn có th�
 
 Bot sẽ tự động kết nối với cửa sổ giả lập và ở trạng thái chờ sẵn sàng.
 
-### Bước 3: Bật / Tắt auto bằng phím `q`
-- **Bắt đầu câu:** Nhấn phím **`q`** (hoặc phím Space) trên bàn phím. Bot sẽ bắt đầu quăng cần và câu cá tự động.
-- **Dừng bot:** Nhấn giữ phím **`q`** lần nữa trong khoảng 1 giây để dừng bot an toàn bất kỳ lúc nào (bấm ở bất kỳ đâu trên màn hình, không cần bấm vào cửa sổ dòng lệnh).
+### Bước 3: Điều khiển bằng phím tắt
+- **Bắt đầu câu:** Nhấn phím **`Q`** (hoặc phím Space) để bot bắt đầu quăng cần và câu cá tự động.
+- **Dừng bot:** Nhấn phím **`ESC`** bất kỳ lúc nào để dừng bot ngay lập tức (bấm ở bất kỳ đâu, không cần bấm vào cửa sổ dòng lệnh).
 
 ---
 
