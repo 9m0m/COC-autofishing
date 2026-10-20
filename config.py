@@ -1,35 +1,55 @@
 """
-Cấu hình toạ độ và thông số nhận diện cho Auto Câu Cá BlueStacks.
-Đã đo đạc chính xác tâm điểm theo cả 3 bức ảnh thực tế:
-- Nút câu cá: Rel X = 0.406, Rel Y = 0.814 (Chính giữa tâm nút)
-- Nút Nhận Ngay: Rel X = 0.465, Rel Y = 0.870 (Chính giữa nút Nhận Ngay)
+Cấu hình toạ độ và thông số nhận diện cho Auto Câu Cá Đa Giả Lập.
+Đo đạc chính xác theo tỉ lệ chuẩn màn hình dọc (Portrait 9:16) trên BlueStacks, LDPlayer, Nox, MuMu.
+- Nút câu cá: Rel X = 0.406, Rel Y = 0.814 (Tâm nút câu)
+- Nút Nhận Ngay: Rel X = 0.465, Rel Y = 0.870 (Nút nhận thưởng an toàn, tránh nút X)
+- Thanh trượt minigame: X [0.200 -> 0.710], Y [0.660 -> 0.710]
 """
 
-# Tỉ lệ vị trí tâm nút câu cá (Chính xác tâm 100%)
-BUTTON_REL_X = 0.406
-BUTTON_REL_Y = 0.814
+# ==============================================================================
+# 1. TOẠ ĐỘ TỈ LỆ (THEO CHIỀU RỘNG & CAO CỦA CỬA SỔ GIẢ LẬP)
+# ==============================================================================
+# Tâm nút câu cá (Trên bờ / Dưới nước / Khi cá cắn)
+BUTTON_REL_X: float = 0.406
+BUTTON_REL_Y: float = 0.814
 
-# Tỉ lệ thanh trượt mini-game
-SLIDER_REL_X_MIN = 0.200
-SLIDER_REL_X_MAX = 0.710
-SLIDER_REL_Y_MIN = 0.660
-SLIDER_REL_Y_MAX = 0.710
+# Vùng thanh trượt mini-game kéo cá
+SLIDER_REL_X_MIN: float = 0.200
+SLIDER_REL_X_MAX: float = 0.710
+SLIDER_REL_Y_MIN: float = 0.660
+SLIDER_REL_Y_MAX: float = 0.710
 
-# Tỉ lệ nút "Nhận Ngay" ở đáy
-CLAIM_REL_X = 0.465
-CLAIM_REL_Y = 0.870
+# Vị trí nút "Nhận Ngay" & vùng an toàn đóng popup
+# (Nằm ngoài popup kỷ lục, trúng nút nhận thưởng cá thường, tuyệt đối không chạm nút X)
+CLAIM_REL_X: float = 0.465
+CLAIM_REL_Y: float = 0.870
 
-# Dải màu HSV
+# ==============================================================================
+# 2. DẢI MÀU HSV & NGƯỠNG NHẬN DIỆN
+# ==============================================================================
+# Trạng thái 1: Nút xanh lá sẵn sàng thả cần (Trên bờ)
 HSV_READY_GREEN_LOWER = [35, 70, 70]
 HSV_READY_GREEN_UPPER = [85, 255, 255]
+GREEN_PX_THRESHOLD: int = 400
 
+# Trạng thái 2: Nút xám dưới nước (Cần đã thả, đang chờ cá đớp)
+# Màu xám có độ bão hòa rất thấp (S < 50) và độ sáng vừa phải (80 <= V <= 220)
+GREY_SATURATION_MAX: int = 50
+GREY_VALUE_MIN: int = 80
+GREY_VALUE_MAX: int = 220
+GREY_PX_THRESHOLD: int = 600
+
+# Trạng thái 3: Nút tím rực khi cá cắn câu thật sự & trong trận kéo cá
 HSV_BITE_PURPLE_LOWER = [125, 70, 90]
 HSV_BITE_PURPLE_UPPER = [175, 255, 255]
+PURPLE_PX_THRESHOLD: int = 700
 
-# Dải màu vàng thanh trượt
+# Trạng thái 4: Ô vàng mục tiêu trên thanh trượt
 HSV_YELLOW_LOWER = [15, 70, 90]
 HSV_YELLOW_UPPER = [38, 255, 255]
+YELLOW_MAX_WIDTH: int = 130  # Nếu rộng hơn 130px là chữ 'Hoàn hảo!' lóe sáng
 
+# Phao đỏ di chuyển trên thanh trượt (quét 2 dải đỏ của HSV)
 HSV_RED_LOWER1 = [0, 90, 90]
 HSV_RED_UPPER1 = [12, 255, 255]
 HSV_RED_LOWER2 = [168, 90, 90]
