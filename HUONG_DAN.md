@@ -1,16 +1,16 @@
-# HƯỚNG DẪN CÀI ĐẶT & SỬ DỤNG AUTO CÂU CÁ BLUESTACKS
+# HƯỚNG DẪN CÀI ĐẶT & SỬ DỤNG AUTO CÂU CÁ (ĐA GIẢ LẬP)
 
-Tool tự động hoàn toàn: Tự thả cần, tự giật khi cá cắn, tự căn thanh trượt siêu tốc (100+ FPS), tự nhận quà & tự vượt mọi loại popup (cá thường, cá kỷ lục, cá boss).
+Tool tự động hoàn toàn: Hỗ trợ BlueStacks, LDPlayer, Nox, MuMu. Tự thả cần, tự giật khi cá cắn, tự căn thanh trượt siêu tốc (100+ FPS), tự nhận quà & tự vượt mọi loại popup.
 
 ---
 
-## 1. YÊU CẦU CẤU HÌNH BLUESTACKS (Cực kỳ quan trọng)
+## 1. YÊU CẦU CẤU HÌNH GIẢ LẬP (BLUESTACKS / LDPLAYER / NOX)
 
 Để bot nhận diện đúng 100% toạ độ:
-1. Mở BlueStacks -> Vào **Cài đặt (Settings)** -> **Hiển thị (Display)**:
-   - **Độ phân giải:** Chọn chế độ **Điện thoại (Portrait)** tỉ lệ 9:16 (ví dụ: `720 x 1280` hoặc `1080 x 1920`).
+1. Mở giả lập của bạn (**BlueStacks**, **LDPlayer**, **Nox**, ...) -> Vào **Cài đặt (Settings)** -> **Hiển thị (Display)**:
+   - **Độ phân giải:** Chọn chế độ **Điện thoại (Mobile / Portrait / Dọc)** tỉ lệ 9:16 (ví dụ: `720 x 1280` hoặc `1080 x 1920`).
 2. Vào game, đứng tại khu vực câu cá.
-3. Không thu nhỏ (minimize) cửa sổ BlueStacks xuống thanh Taskbar khi đang auto (có thể để cửa sổ hiển thị một góc màn hình).
+3. Không thu nhỏ (minimize) cửa sổ giả lập xuống thanh Taskbar khi đang auto (có thể để hiển thị ở một góc màn hình).
 
 ---
 

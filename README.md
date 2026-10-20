@@ -1,11 +1,12 @@
-# 🎣 AutoFishing-BlueStacks (Auto Câu Cá Siêu Tốc)
+# 🎣 AutoFishing-Android (Auto Câu Cá Siêu Tốc Đa Giả Lập)
 
-> **Công cụ tự động câu cá thông minh dựa trên thị giác máy tính (Computer Vision) thời gian thực dành cho BlueStacks 5.**
+> **Công cụ tự động câu cá thông minh dựa trên thị giác máy tính (Computer Vision) thời gian thực dành cho BlueStacks 5, LDPlayer, NoxPlayer, MuMu Player, MEmu.**
 
 ---
 
 ## 🌟 Tính Năng Nổi Bật
 
+- 📱 **Hỗ trợ đa giả lập Android:** Tự động kết nối BlueStacks, LDPlayer (LDPlayer 9), NoxPlayer, MuMu Player, MEmu.
 - ⚡ **Thị giác máy tính tốc độ cao (100+ FPS):** Sử dụng `MSS` + `OpenCV` tối ưu xử lý từng khung hình chỉ 3–5ms, phản xạ nhanh gấp 50 lần người thật.
 - 🎯 **Căn thanh trượt tự động (Auto Perfect):** Tự động nhận diện ô vàng và vị trí phao câu, nhấp trúng đích 100% kể cả khi ô vàng thu nhỏ.
 - 🐟 **Xử lý trọn vẹn mọi loại cá:** Từ cá thường 1–2 nhịp cho đến cá boss/kỷ lục giằng co 10–15 nhịp (Cá Mập Búa, Cá Đuối Đỏ, Cá Ngừ...).
@@ -15,11 +16,11 @@
 
 ---
 
-## ⚙️ Cấu Hình BlueStacks Khuyến Nghị (Bắt buộc)
+## ⚙️ Cấu Hình Giả Lập Khuyến Nghị (Bắt buộc cho cả BlueStacks & LDPlayer)
 
-Trước khi chạy bot, hãy đảm bảo cấu hình BlueStacks như sau:
-1. Mở **BlueStacks 5** -> Vào **Cài đặt (Settings)** ⚙️ -> **Hiển thị (Display)**.
-2. Tại mục **Độ phân giải hiển thị (Display Resolution)**: Chọn chế độ **Điện thoại (Portrait / Dọc)** tỉ lệ 9:16 (ví dụ: `720 x 1280` hoặc `1080 x 1920`).
+Trước khi chạy bot, hãy đảm bảo cấu hình giả lập của bạn như sau:
+1. Mở giả lập (**BlueStacks**, **LDPlayer**, **Nox**, ...) -> Vào **Cài đặt (Settings)** ⚙️ -> **Nâng cao / Hiển thị (Display)**.
+2. Tại mục **Độ phân giải hiển thị (Resolution)**: Chọn chế độ **Điện thoại (Mobile / Portrait / Dọc)** tỉ lệ 9:16 (ví dụ: `720 x 1280` hoặc `1080 x 1920`).
 3. Mở game, đứng sẵn tại vị trí câu cá.
 
 ---

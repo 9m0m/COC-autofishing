@@ -19,12 +19,36 @@ except Exception:
 
 user32 = ctypes.windll.user32
 
-def find_bluestacks_window():
-    windows = gw.getWindowsWithTitle("BlueStacks")
-    if not windows:
-        windows = gw.getWindowsWithTitle("App Player")
-    if windows:
-        return windows[0]
+def find_emulator_window():
+    """
+    Tự động tìm kiếm cửa sổ của các giả lập Android phổ biến:
+    BlueStacks, LDPlayer, NoxPlayer, MuMu Player, MEmu.
+    """
+    targets = ["BlueStacks", "App Player", "LDPlayer", "Nox", "MuMu", "MEmu"]
+    try:
+        for w in gw.getAllWindows():
+            title = w.title
+            if not title:
+                continue
+            for t in targets:
+                if t.lower() in title.lower():
+                    rect = wintypes.RECT()
+                    user32.GetWindowRect(w._hWnd, ctypes.byref(rect))
+                    width = rect.right - rect.left
+                    height = rect.bottom - rect.top
+                    if width > 250 and height > 400:
+                        return w
+    except Exception:
+        pass
+
+    for t in targets:
+        try:
+            wins = gw.getWindowsWithTitle(t)
+            if wins:
+                return wins[0]
+        except Exception:
+            pass
+
     return None
 
 def get_window_rect(hwnd):
@@ -33,10 +57,10 @@ def get_window_rect(hwnd):
     return rect.left, rect.top, rect.right - rect.left, rect.bottom - rect.top
 
 def main():
-    print("Đang tìm cửa sổ BlueStacks...")
-    win = find_bluestacks_window()
+    print("Đang tìm cửa sổ giả lập (BlueStacks, LDPlayer, Nox, MuMu, MEmu)...")
+    win = find_emulator_window()
     if not win:
-        print("[LỖI] Không tìm thấy cửa sổ BlueStacks. Vui lòng mở game trước!")
+        print("[LỖI] Không tìm thấy cửa sổ giả lập. Vui lòng mở game trước!")
         return
 
     hwnd = win._hWnd
