@@ -111,7 +111,7 @@ def get_game_viewport(hwnd: int, win_title: str) -> Tuple[int, int, int, int]:
 
 def main():
     print("=" * 65)
-    print("   🔍 KIỂM TRA CĂN CHỈNH TOẠ ĐỘ GIẢ LẬP (TEST PREVIEW)")
+    print("   KIEM TRA CAN CHINH TOA DO GIA LAP (TEST PREVIEW)")
     print("=" * 65)
     print("Đang tìm cửa sổ giả lập (BlueStacks, LDPlayer, Nox, MuMu, MEmu)...")
 

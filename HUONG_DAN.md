@@ -1,69 +1,78 @@
-# HƯỚNG DẪN CÀI ĐẶT & SỬ DỤNG AUTO CÂU CÁ (BẢN V12 ĐA GIẢ LẬP)
+# Hướng dẫn cài đặt và sử dụng Auto Câu Cá (Bản V12.1 Đa Giả Lập)
 
-Tool tự động hoàn toàn: Hỗ trợ BlueStacks 5, LDPlayer 9, NoxPlayer, MuMu Player, MEmu.
-Tự quăng cần, tự chờ cá cắn, tự căn thanh trượt siêu tốc (100+ FPS), tự nhận quà & tự vượt mọi loại popup.
+Công cụ tự động câu cá cho sự kiện Câu cá trong game Clash of Critters trên các trình giả lập: BlueStacks 5, LDPlayer 9, NoxPlayer, MuMu Player, MEmu.
 
 ---
 
-## 1. YÊU CẦU CẤU HÌNH GIẢ LẬP (BẮT BUỘC)
+## 1. Yêu cầu cấu hình giả lập (Bắt buộc)
 
-Để tool nhận diện chính xác 100% toạ độ:
-1. Mở giả lập của bạn (**BlueStacks**, **LDPlayer**, **Nox**, ...) -> Vào **Cài đặt (Settings)** ⚙️ -> **Hiển thị (Display)**:
-   - **Độ phân giải:** Chọn chế độ **Điện thoại (Mobile / Portrait / Dọc)** tỉ lệ 9:16 (ví dụ: `720 x 1280` hoặc `1080 x 1920`).
-   - **DPI:** `240` hoặc `320`.
-2. Mở game, cho nhân vật đứng tại vị trí bờ hồ câu cá.
+Để bot nhận diện toạ độ chính xác:
+1. Mở cài đặt giả lập (Settings) -> mục Hiển thị (Display):
+   - Độ phân giải: Chọn chế độ Điện thoại (Portrait / 9:16), ví dụ 720x1280 hoặc 1080x1920.
+   - DPI: 240 hoặc 320.
+2. Mở game Clash of Critters và vào giao diện sự kiện Câu cá.
 3. Không thu nhỏ (minimize) cửa sổ giả lập xuống thanh Taskbar khi đang auto.
 
 ---
 
-## 2. HƯỚNG DẪN CÀI ĐẶT DÀNH CHO BẠN BÈ (CHỈ LÀM LẦN ĐẦU)
+## 2. Hướng dẫn sử dụng cho người dùng phổ thông
 
-### Bước 1: Cài đặt Python (Nếu máy chưa có)
-- Tải Python từ trang chủ: https://www.python.org/downloads/ (chọn bản Python 3.10 trở lên).
-- ⚠️ **LƯU Ý CỰC KỲ QUAN TRỌNG:** Ở màn hình cài đặt đầu tiên, **bắt buộc phải tick vào ô `[v] Add python.exe to PATH`** ở dưới cùng trước khi bấm Install Now!
-
-### Bước 2: Cài đặt thư viện tự động
-- Nhấp đúp vào file **`cai_dat.bat`** trong thư mục.
-- Đợi khoảng 30 giây đến khi hiện chữ *"CAI DAT HOAN TAT 100%!"*.
-
-### Bước 3: Kiểm tra vị trí (Khuyên dùng trước khi câu thật)
-- Mở game trên giả lập và đứng ở hồ câu.
-- Nhấp đúp vào file **`kiem_tra_vi_tri.bat`**.
-- Ảnh chụp màn hình sẽ tự động bật lên:
-  + Vòng tròn xanh lá bao trúng nút quăng cần câu.
-  + Khung vàng bao trọn thanh trượt minigame.
-  + Vòng tròn đỏ nằm ở vị trí nút Nhận Ngay an toàn (cách xa vạch cảnh báo nút X ở đáy).
-- Nếu các khung bao trúng vị trí, bạn có thể hoàn toàn yên tâm 100%!
-
-### Bước 4: Chạy Auto Câu Cá
-- Nhấp đúp chuột vào file **`run_auto.bat`**.
-- Tool sẽ tự động kết nối với cửa sổ game và bắt đầu câu cá liên tục.
-- **DỪNG AUTO BẤT KỲ LÚC NÀO:** Nhấn giữ phím **`q`** trên bàn phím.
+### Cách nhanh nhất (Dùng file .exe)
+1. Tải file `auto_cauca.exe` từ mục Releases trên GitHub.
+2. Mở game và vào sự kiện Câu cá trên giả lập.
+3. Nhấp đúp vào `auto_cauca.exe` để bắt đầu câu tự động.
+4. Nhấn giữ phím `q` trong khoảng 1 giây để dừng bot bất kỳ lúc nào.
 
 ---
 
-## 3. CÁCH ĐÓNG GÓI THÀNH FILE .EXE (Dành cho người không muốn cài Python)
+## 3. Hướng dẫn cài đặt từ mã nguồn Python (Chỉ làm lần đầu)
 
-Nếu bạn muốn gửi cho bạn bè chỉ duy nhất 1 file `.exe`:
-1. Mở CMD tại thư mục này, cài đặt PyInstaller:
+### Bước 1: Cài đặt Python
+- Tải Python từ trang chủ: https://www.python.org/downloads/ (chọn bản Python 3.10 trở lên).
+- Lưu ý: Ở màn hình cài đặt đầu tiên, bắt buộc phải đánh dấu vào ô `Add python.exe to PATH` ở dưới cùng trước khi bấm Install.
+
+### Bước 2: Cài đặt thư viện tự động
+- Nhấp đúp vào file `cai_dat.bat` trong thư mục.
+- Đợi khoảng 30 giây đến khi thông báo cài đặt hoàn tất.
+
+### Bước 3: Kiểm tra vị trí (Tuỳ chọn)
+- Mở game trên giả lập và vào giao diện sự kiện Câu cá.
+- Nhấp đúp vào file `kiem_tra_vi_tri.bat`.
+- Ảnh chụp màn hình sẽ tự động bật lên:
+  - Khung tím: Vùng game thực tế sau khi trừ thanh viền giả lập.
+  - Vòng tròn xanh lá: Vị trí tâm nút quăng cần câu.
+  - Khung vàng: Vùng quét thanh trượt minigame.
+  - Vòng tròn đỏ: Vị trí bấm nhận thưởng an toàn (cách xa nút thoát sự kiện).
+
+### Bước 4: Chạy Auto Câu Cá
+- Nhấp đúp chuột vào file `run_auto.bat`.
+- Bot sẽ tự động kết nối và bắt đầu câu cá liên tục.
+- Dừng bot: Nhấn giữ phím `q` khoảng 1 giây trên bàn phím.
+
+---
+
+## 4. Cách đóng gói thành file .exe độc lập
+
+Nếu muốn tự đóng gói lại file `.exe` từ mã nguồn:
+1. Cài đặt công cụ PyInstaller:
    ```cmd
    pip install pyinstaller
    ```
-2. Đóng gói code thành file exe (bắt buộc đính kèm config.py vào bundle):
+2. Đóng gói mã nguồn kèm file cấu hình:
    ```cmd
    pyinstaller --onefile --add-data "config.py;." auto_cauca.py
    ```
-   > ⚠️ **Lưu ý:** Lệnh trên bắt buộc phải có `--add-data "config.py;."` — nếu thiếu, file exe sẽ báo lỗi ngay khi chạy vì không tìm thấy `config.py`.
-3. Sau khi chạy xong, file `auto_cauca.exe` sẽ nằm trong thư mục `dist\`. Bạn chỉ cần nén file `auto_cauca.exe` đó lại và gửi cho bạn bè!
+3. File `auto_cauca.exe` sẽ được tạo trong thư mục `dist\`.
 
 ---
 
-## 4. DANH SÁCH FILE KHI GỬI CHO BẠN BÈ
-- `auto_cauca.py`: Mã nguồn chính của bot (Bản V12).
-- `config.py`: File cấu hình toạ độ và dải màu.
-- `test_preview.py`: Tool chụp ảnh kiểm tra khung ngắm.
+## 5. Danh sách file trong dự án
+- `auto_cauca.py`: Mã nguồn chính của bot (Bản V12.1).
+- `config.py`: File cấu hình toạ độ tỉ lệ, dải màu HSV và thông số bù viền giả lập.
+- `test_preview.py`: Công cụ chụp ảnh kiểm tra khung ngắm.
 - `cai_dat.bat`: File cài đặt thư viện tự động chỉ bằng 1 click.
 - `kiem_tra_vi_tri.bat`: File kiểm tra toạ độ trong 5 giây.
 - `run_auto.bat`: File khởi động auto chỉ bằng 1 click.
-- `requirements.txt`: Danh sách thư viện Python.
-- `HUONG_DAN.md`: File hướng dẫn này.
+- `requirements.txt`: Danh sách thư viện Python phụ thuộc.
+- `HUONG_DAN.md`: File hướng dẫn chi tiết này.
+- `README.md`: Tài liệu tổng quan dự án trên GitHub.

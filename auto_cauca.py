@@ -266,7 +266,7 @@ def detect_yellow_and_bobber(roi_img: np.ndarray) -> Tuple[Optional[Tuple[int, i
 
 def main():
     print("=" * 68)
-    print("   🎣 AUTO CÂU CÁ ĐA GIẢ LẬP (BẢN V12.1 - STATE MACHINE CHUẨN XÁC)")
+    print("   AUTO CAU CA DA GIA LAP (BAN V12.1 - STATE MACHINE CHUAN XAC)")
     print("=" * 68)
     print("(*) Hỗ trợ: BlueStacks 5, LDPlayer 9, NoxPlayer, MuMu Player, MEmu.")
     print("(*) Nhấn giữ phím 'q' trên bàn phím để DỪNG AUTO an toàn.")
