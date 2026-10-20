@@ -20,8 +20,9 @@ Công cụ tự động câu cá cho sự kiện Câu cá trong game Clash of Cr
 ### Cách nhanh nhất (Dùng file .exe)
 1. Tải file `auto_cauca.exe` từ mục Releases trên GitHub.
 2. Mở game và vào sự kiện Câu cá trên giả lập.
-3. Nhấp đúp vào `auto_cauca.exe` để bắt đầu câu tự động.
-4. Nhấn giữ phím `q` trong khoảng 1 giây để dừng bot bất kỳ lúc nào.
+3. Nhấp đúp vào `auto_cauca.exe`. Bot sẽ tự động kết nối và chờ lệnh.
+4. Bấm phím `q` (hoặc Space) để bắt đầu câu cá tự động.
+5. Nhấn giữ phím `q` lần nữa trong khoảng 1 giây để dừng bot bất kỳ lúc nào.
 
 ---
 

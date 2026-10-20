@@ -20,14 +20,15 @@ Nếu không muốn cài đặt Python hay thao tác dòng lệnh, bạn có th�
 1. Cài đặt độ phân giải giả lập về chế độ **Điện thoại (Portrait / 9:16)**, ví dụ `720x1280` hoặc `1080x1920`. DPI khuyến nghị: `240` hoặc `320`.
 2. Mở game Clash of Critters và vào giao diện sự kiện **Câu cá**.
 
-### Bước 2: Chạy bot
+### Bước 2: Mở bot
 - **Nếu dùng file `.exe`:** Nhấp đúp vào file `auto_cauca.exe`.
 - **Nếu chạy từ mã nguồn Python:** Nhấp đúp vào file `run_auto.bat` (hoặc gõ `python auto_cauca.py`).
 
-Bot sẽ tự động quét và kết nối với cửa sổ giả lập đang mở, tính toán phần viền/thanh công cụ và bắt đầu câu cá tự động.
+Bot sẽ tự động kết nối với cửa sổ giả lập và ở trạng thái chờ sẵn sàng.
 
-### Bước 3: Dừng bot khi cần
-- Nhấn giữ phím **`q`** trên bàn phím trong khoảng 1 giây (nhấn ở bất kỳ đâu trên màn hình, **không cần phải bấm chọn cửa sổ dòng lệnh**). Bot sẽ tự động dừng an toàn và thông báo tổng số cá đã câu.
+### Bước 3: Bật / Tắt auto bằng phím `q`
+- **Bắt đầu câu:** Nhấn phím **`q`** (hoặc phím Space) trên bàn phím. Bot sẽ bắt đầu quăng cần và câu cá tự động.
+- **Dừng bot:** Nhấn giữ phím **`q`** lần nữa trong khoảng 1 giây để dừng bot an toàn bất kỳ lúc nào (bấm ở bất kỳ đâu trên màn hình, không cần bấm vào cửa sổ dòng lệnh).
 
 ---
 

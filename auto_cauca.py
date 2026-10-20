@@ -260,22 +260,21 @@ def detect_yellow_and_bobber(roi_img: np.ndarray) -> Tuple[Optional[Tuple[int, i
 
 def main():
     print("=" * 68)
-    print("   AUTO CAU CA DA GIA LAP (BAN V12.1 - STATE MACHINE CHUAN XAC)")
+    print("   COC-AUTOFISHING (BAN V12.1 - STATE MACHINE)")
     print("=" * 68)
-    print("(*) Hỗ trợ: BlueStacks 5, LDPlayer 9, NoxPlayer, MuMu Player, MEmu.")
-    print("(*) Nhấn giữ phím 'q' trên bàn phím để DỪNG AUTO an toàn.")
-    print("(*) Phân biệt chính xác: Trên bờ (Xanh) - Dưới nước (Xám) - Cá cắn (Tím).")
+    print("(*) Ho tro: BlueStacks 5, LDPlayer 9, NoxPlayer, MuMu Player, MEmu.")
+    print("(*) Cong tac bat/tat: Nhan 'q' de BAT DAU -> Nhan 'q' lan nua de DUNG.")
     print("-" * 68)
 
     win = find_emulator_window()
     if not win:
-        log("[CHỜ ĐỢI] Chưa phát hiện cửa sổ giả lập nào (BlueStacks, LDPlayer, Nox, MuMu, MEmu)...")
-        log("[HƯỚNG DẪN] Bạn hãy mở giả lập và vào game, bot sẽ tự động nhận diện và kết nối!")
-        log("(*) Hoặc nhấn giữ phím 'q' để huỷ bỏ.")
+        log("[CHO DOI] Chua phat hien cua so gia lap (BlueStacks, LDPlayer, Nox, MuMu, MEmu)...")
+        log("[HUONG DAN] Hay mo gia lap va vao game, bot se tu dong nhan dien!")
+        log("(*) Nhan phim 'Esc' de thoat.")
         while not win:
             time.sleep(1.2)
-            if keyboard.is_pressed("q"):
-                log("\n[DỪNG] Người dùng đã huỷ bỏ tìm kiếm.")
+            if keyboard.is_pressed("esc"):
+                log("\n[DUNG] Nguoi dung da huy bo tim kiem.")
                 return
             win = find_emulator_window()
 
@@ -289,9 +288,9 @@ def main():
     # Bù viền cửa sổ và thanh công cụ theo từng giả lập trước khi tính toạ độ tương đối
     left, top, w, h = get_game_viewport(hwnd, win.title)
     raw_left, raw_top, raw_w, raw_h = get_window_rect(hwnd)
-    log(f"[KẾT NỐI] Cửa sổ: '{win.title}'")
-    log(f"[CỬA SỔ THỰC]  Left={raw_left}, Top={raw_top}, Width={raw_w}, Height={raw_h}")
-    log(f"[VÙNG GAME]    Left={left}, Top={top}, Width={w}, Height={h}  (đã bù sidebar/titlebar)")
+    log(f"[KET NOI] Cua so: '{win.title}'")
+    log(f"[CUA SO THUC]  Left={raw_left}, Top={raw_top}, Width={raw_w}, Height={raw_h}")
+    log(f"[VUNG GAME]    Left={left}, Top={top}, Width={w}, Height={h}  (da bu sidebar/titlebar)")
 
     btn_screen_x = int(left + w * config.BUTTON_REL_X)
     btn_screen_y = int(top + h * config.BUTTON_REL_Y)
@@ -326,13 +325,38 @@ def main():
     last_heartbeat = 0
     wait_ready_start = time.time()
 
-    log("[BẮT ĐẦU] Khởi động vòng lặp câu cá tự động...")
+    # Đảm bảo phím 'q' và 'space' đã được nhả trước khi vào bước chờ kích hoạt
+    while keyboard.is_pressed("q") or keyboard.is_pressed("space"):
+        time.sleep(0.05)
+
+    print("-" * 68)
+    log("[SAN SANG] Da ket noi thanh cong voi gia lap!")
+    log("[HUONG DAN] 1. Mo su kien Cau ca trong game tren gia lap.")
+    log("[HUONG DAN] 2. Nhan phim 'q' (hoac Space) tren ban phim de BAT DAU auto...")
+    print("-" * 68)
+
+    # Chờ người dùng nhấn 'q' hoặc 'Space' để bắt đầu
+    while True:
+        if keyboard.is_pressed("q") or keyboard.is_pressed("space"):
+            break
+        if keyboard.is_pressed("esc"):
+            log("\n[THOAT] Nguoi dung da nhan Esc de thoat.")
+            return
+        time.sleep(0.05)
+
+    # Đợi người dùng nhả phím hoàn toàn (debouncing) để không bị ăn nhầm vào lệnh dừng
+    while keyboard.is_pressed("q") or keyboard.is_pressed("space"):
+        time.sleep(0.05)
+    time.sleep(0.4)
+
+    log("[KHOI DONG] >> DA BAT AUTO! BAT DAU CAU CA TU DONG <<")
+    log("(*) Khi muon DUNG, hay nhan giu phim 'q' trong 1 giay.\n")
 
     # Bọc vòng lặp chính để xử lý an toàn ngoại lệ FailSafe và KeyboardInterrupt
     try:
         while True:
             if keyboard.is_pressed("q"):
-                log("\n[DỪNG KHẨN CẤP] Người dùng đã nhấn phím 'q'. Thoát bot an toàn!")
+                log("\n[DUNG BOT] Nguoi dung da nhan phim 'q'. Dung auto an toan!")
                 break
 
             now = time.time()
