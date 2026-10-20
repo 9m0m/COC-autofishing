@@ -1,119 +1,86 @@
-# 🎣 COC-autofishing (Auto Câu Cá Siêu Tốc Đa Giả Lập)
+# COC-autofishing
 
-> **Hệ thống tự động câu cá thông minh dựa trên thị giác máy tính thời gian thực (Computer Vision 100+ FPS) dành cho game Clash of Critters trên BlueStacks 5, LDPlayer 9, NoxPlayer, MuMu Player, MEmu.**
-
----
-
-### ⚡ DÀNH CHO NGƯỜI DÙNG CUỐI (TẢI VỀ CHẠY NGAY):
-> ### 📥 [👉 BẤM VÀO ĐÂY ĐỂ TẢI BẢN MỚI NHẤT (auto_cauca.exe) 👈](https://github.com/9m0m/COC-autofishing/releases/latest)
-> *(Chỉ cần tải 1 file `auto_cauca.exe` về nhấp đúp là chạy, **không cần cài đặt Python**, tự động nhận diện giả lập 100%!)*
+Công cụ tự động câu cá cho game Clash of Critters trên các trình giả lập Android (BlueStacks 5, LDPlayer 9, NoxPlayer, MuMu Player, MEmu) sử dụng thị giác máy tính thời gian thực (Computer Vision 100+ FPS).
 
 ---
 
-## 🌟 Tính Năng Nổi Bật
+## Tải về bản chạy ngay (.exe)
 
-- 📱 **Hỗ trợ đa giả lập Android:** Tự động phát hiện và kết nối với **BlueStacks 5, LDPlayer 9, NoxPlayer, MuMu Player, MEmu**.
-- ⚡ **Thị giác máy tính tốc độ cao (100+ FPS):** Tối ưu xử lý khung hình siêu tốc bằng `MSS` + `OpenCV` với độ trễ phản xạ chỉ 3–5ms.
-- 🎯 **Căn thanh trượt tự động (Auto Perfect):** Tự động nhận diện ô vàng mục tiêu và vị trí phao, nhấp trúng đích 100% nhịp Hoàn Hảo kể cả khi ô vàng co lại rất nhỏ.
-- 🧠 **Cơ chế Button State Machine 4 pha độc quyền:**
-  1. **Xanh lá (`green_px > 400`):** Cần trên bờ -> Tự động quăng cần.
-  2. **Xám (`grey_px > 600`):** Cần dưới nước -> Yên lặng chờ cá đớp, tuyệt đối không click bậy làm giật cần hỏng mồi.
-  3. **Tím (`purple_px > 700`):** Cá cắn thật -> Giật cần tức thì & khóa chặt vòng lặp kéo cá, không bị ngắt quãng bởi chữ *'Hoàn hảo!'* hay *'Rất tuyệt!'*.
-  4. **Tối / Modal:** Popup kết quả -> Chạm 2 nhịp vào vị trí an toàn (`Rel Y = 0.870`), **tuyệt đối không chạm vào nút X thoát game (`Rel Y = 0.950`)**.
-- 🔍 **Công cụ kiểm tra trực quan (1-Click Preview):** Chạy `kiem_tra_vi_tri.bat` để xem trước toàn bộ các khung ngắm trực quan trong 5 giây.
-- 🖥️ **Chuẩn hóa Per-Monitor DPI v2:** Tương thích hoàn toàn với mọi màn hình độ phân giải Full HD, 2K, 4K và tỉ lệ scale Windows (100%, 125%, 150%).
-- 🛑 **Dừng khẩn cấp:** Giữ phím `q` bất cứ lúc nào để thoát an toàn.
+Nếu không muốn cài đặt Python hay thao tác dòng lệnh, bạn có thể tải bản đóng gói sẵn:
+
+> **[Tải file auto_cauca.exe tại GitHub Releases](https://github.com/9m0m/COC-autofishing/releases/latest)**
 
 ---
 
-## 🔄 Sơ Đồ Trạng Thái (State Machine Flow)
+## Hướng dẫn sử dụng nhanh
 
-```text
-[BẮT ĐẦU]
-    │
-    ▼
-[Cần trên bờ] ──── (Nút Xanh > 400 px) ────► [Quăng Cần]
-    ▲                                               │
-    │ (Xong vòng / Popup đóng)                     ▼
-[Đóng Popup / Nhận Quà]                     [Cần dưới nước] (Nút Xám > 600 px)
-    ▲                                               │ (Chờ yên lặng, không click)
-    │ (Hết tím > 0.8s)                             ▼
-[Minigame Kéo Cá] ◄─── (Giật Cần Tức Thì) ─── [Cá Cắn Câu] (Nút Tím > 700 px)
- (100+ FPS, bám phao vào ô vàng)
-```
+Để bot nhận diện toạ độ chính xác, hãy làm theo đúng thứ tự 3 bước sau:
 
----
+### Bước 1: Chuẩn bị giả lập và game
+1. Cài đặt độ phân giải giả lập về chế độ **Điện thoại (Portrait / 9:16)**, ví dụ `720x1280` hoặc `1080x1920`. DPI khuyến nghị: `240` hoặc `320`.
+2. Mở game Clash of Critters và di chuyển nhân vật đến vị trí hồ câu cá.
 
-## ⚙️ Cấu Hình Giả Lập Khuyến Nghị
+### Bước 2: Chạy bot
+- **Nếu dùng file `.exe`:** Nhấp đúp vào file `auto_cauca.exe`.
+- **Nếu chạy từ mã nguồn Python:** Nhấp đúp vào file `run_auto.bat` (hoặc gõ `python auto_cauca.py`).
 
-Để đảm bảo toạ độ chính xác 100%:
-1. Mở giả lập (**BlueStacks / LDPlayer / Nox**) -> Vào **Cài đặt (Settings)** ⚙️ -> **Hiển thị (Display)**:
-   - **Chế độ hiển thị:** Chọn **Điện thoại (Mobile / Portrait / Dọc)** tỉ lệ 9:16.
-   - **Độ phân giải khuyến nghị:** `720 x 1280` hoặc `1080 x 1920`.
-   - **DPI:** `240` hoặc `320`.
-2. Mở game và di chuyển nhân vật đến hồ câu cá.
+Bot sẽ tự động quét và kết nối với cửa sổ giả lập đang mở, tính toán phần viền/thanh công cụ và bắt đầu câu cá tự động.
+
+### Bước 3: Dừng bot khi cần
+- Bất kỳ lúc nào muốn dừng, hãy **nhấn giữ phím `q`** trên bàn phím. Bot sẽ dừng an toàn và thông báo tổng số cá đã câu.
 
 ---
 
-## 🚀 Hướng Dẫn Cài Đặt & Sử Dụng
+## Chạy từ mã nguồn Python (Dành cho lập trình viên)
 
-### 👉 Dành cho người dùng (Khuyên dùng)
-1. Cài đặt **Python 3.10+** từ [python.org](https://www.python.org/downloads/).
-   > ⚠️ **LƯU Ý:** Khi cài đặt, bắt buộc phải tick vào ô: `[v] Add python.exe to PATH`.
-2. Tải mã nguồn về máy: Bấm nút xanh **`Code`** -> **`Download ZIP`** -> Giải nén ra thư mục.
-3. Nhấp đúp vào **`cai_dat.bat`** (chỉ cần chạy lần đầu để cài thư viện).
-4. Nhấp đúp vào **`kiem_tra_vi_tri.bat`** để xem ảnh kiểm tra khung ngắm (5 giây).
-5. Nhấp đúp vào **`run_auto.bat`** để bắt đầu câu cá tự động!
+Yêu cầu môi trường: **Python 3.10** trở lên trên Windows.
 
----
-
-### 👉 Dành cho Developer
 ```bash
-# 1. Clone repository
+# 1. Tải mã nguồn về máy
 git clone https://github.com/9m0m/COC-autofishing.git
 cd COC-autofishing
 
-# 2. Cài đặt thư viện
+# 2. Cài đặt các thư viện cần thiết
 pip install -r requirements.txt
 
-# 3. Kiểm tra khung nhận diện
+# 3. (Tuỳ chọn) Kiểm tra khung ngắm toạ độ trước khi câu
 python test_preview.py
 
-# 4. Khởi động bot
+# 4. Khởi động bot câu cá
 python auto_cauca.py
 ```
 
 ---
 
-## 📦 Đóng Gói File .EXE (Chạy không cần cài Python)
+## Nguyên lý hoạt động
 
-Nếu muốn chia sẻ cho bạn bè 1 file duy nhất để chạy ngay:
-```bash
-pip install pyinstaller
-pyinstaller --onefile --add-data "config.py;." auto_cauca.py
-```
-> ⚠️ **Lưu ý:** Bắt buộc phải có `--add-data "config.py;."` để đóng gói file cấu hình kèm theo.
-File `auto_cauca.exe` sẽ được tạo trong thư mục `dist\`.
+Bot vận hành dựa trên máy trạng thái 4 pha (Button State Machine) kết hợp quét dải màu HSV và định vị phao:
+
+1. **Trên bờ (Nút xanh lá):** Bot bấm quăng cần câu xuống nước.
+2. **Dưới nước (Nút xám):** Cần đang thả chờ cá đớp. Bot giữ yên lặng tuyệt đối, không click nhầm làm giật cần hỏng mồi.
+3. **Cá cắn câu (Nút tím):** Bot giật cần lập tức và chuyển sang chế độ quét thanh trượt minigame tốc độ cao (100+ FPS). Phao đỏ chạm ô vàng sẽ bấm chuẩn xác nhịp Hoàn Hảo.
+4. **Nhận quà (Popup kết quả):** Bot tự động bấm nhận thưởng tại toạ độ an toàn (`Rel Y = 0.870`), hoàn toàn cách xa nút X thoát game ở đáy màn hình.
+
+Nếu game bị lag hoặc kẹt bảng thông báo quá 2.5 giây, bot có cơ chế tự giải cứu để tiếp tục vòng câu mới mà không cần can thiệp thủ công.
 
 ---
 
-## 📁 Cấu Trúc Dự Án
+## Cấu trúc thư mục
 
 ```text
-├── auto_cauca.py          # Logic chính của Bot (State Machine V12.1)
-├── config.py              # Toạ độ tỉ lệ và ngưỡng màu HSV
-├── test_preview.py        # Tool kiểm tra căn chỉnh khung hình trực quan
-├── requirements.txt       # Danh sách thư viện Python phụ thuộc
-├── cai_dat.bat            # Script 1-click kiểm tra môi trường & cài thư viện
-├── run_auto.bat           # Script 1-click khởi động Bot
-├── kiem_tra_vi_tri.bat    # Script 1-click chụp và mở ảnh xem trước khung ngắm
+├── auto_cauca.py          # Mã nguồn điều khiển chính (State Machine V12.1)
+├── config.py              # Toạ độ tỉ lệ, ngưỡng màu HSV và bù viền giả lập
+├── test_preview.py        # Công cụ chụp và kiểm tra khung ngắm trực quan
+├── requirements.txt       # Danh sách thư viện phụ thuộc
+├── cai_dat.bat            # Script 1-click cài đặt thư viện tự động
+├── run_auto.bat           # Script 1-click khởi động bot
+├── kiem_tra_vi_tri.bat    # Script 1-click kiểm tra toạ độ
 ├── HUONG_DAN.md           # Hướng dẫn chi tiết bằng tiếng Việt
-├── LICENSE                # Giấy phép MIT
-└── README.md              # Giới thiệu & tài liệu tổng quan
+└── LICENSE                # Giấy phép mã nguồn mở MIT
 ```
 
 ---
 
-## ⚖️ Giấy Phép (License)
+## Giấy phép
 
-Dự án được phân phối dưới giấy phép [MIT License](LICENSE).
+Dự án được phân phối theo giấy phép [MIT License](LICENSE).
