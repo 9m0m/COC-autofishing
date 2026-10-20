@@ -1,19 +1,6 @@
 """
-CÔNG CỤ KIỂM TRA & CĂN CHỈNH TOẠ ĐỘ TRỰC QUAN (TEST PREVIEW)
-Hỗ trợ: BlueStacks 5, LDPlayer 9, NoxPlayer, MuMu Player, MEmu.
-
-Công dụng:
-- Chụp ảnh màn hình cửa sổ giả lập hiện tại.
-- Vẽ các khung nhận diện:
-  + VÒNG TRÒN XANH LÁ: Vị trí tâm nút câu cá (Trên bờ / Dưới nước / Cá cắn).
-  + KHUNG CHỮ NHẬT VÀNG: Vị trí thanh trượt mini-game câu cá.
-  + VÒNG TRÒN ĐỎ: Vị trí bấm nút Nhận Ngay (Rel Y = 0.870) an toàn.
-  + ĐƯỜNG KẺ GẠCH ĐỎ (Y = 0.950): Vị trí nút X thoát game (Đã né tránh an toàn 100%).
-  + KHUNG TÍM: Vùng game thực sự sau khi trừ sidebar/titlebar của từng giả lập.
-- Tự động mở ảnh xem trước ngay lập tức để người dùng kiểm tra bằng mắt trong 5 giây.
-
-LƯU Ý: Tool này dùng cùng logic get_game_viewport() như bot thực tế.
-Nếu các vòng tròn trùng đúng vị trí nút trong game → Bot sẽ hoạt động chính xác 100%.
+Công cụ chụp ảnh và kiểm tra khung ngắm toạ độ trên giả lập Android.
+Sử dụng cùng logic tính toán viewport với auto_cauca.py.
 """
 
 import sys

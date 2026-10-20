@@ -1,22 +1,16 @@
 """
-AUTO CÂU CÁ ĐA GIẢ LẬP (BẢN V12.1 - STATE MACHINE CHUẨN XÁC & KHÓA CHẶT MINIGAME)
+COC-autofishing: Bot tự động câu cá cho game Clash of Critters trên giả lập Android.
 Hỗ trợ: BlueStacks 5, LDPlayer 9, NoxPlayer, MuMu Player, MEmu.
 
-Cơ chế điều khiển thông minh theo 4 trạng thái màu nút bấm (Button State Machine):
-1. XANH LÁ (green_px > 400): Cần trên bờ -> Quăng cần xuống nước.
-2. XÁM (grey_px > 600): Cần đang dưới nước -> Giữ yên lặng chờ cá cắn (không click bậy làm giật cần).
-3. TÍM (purple_px > 700): Cá cắn thật sự -> Giật cần & Khóa chặt minigame thanh trượt 100+ FPS.
-4. TỐI / MODAL (các màu đều < 200): Popup mở ra -> Chạm 2 nhịp vào nút Nhận Ngay (Rel Y = 0.870) an toàn.
-
-Nhấn giữ phím 'q' trên bàn phím để dừng bot an toàn bất kỳ lúc nào.
-
---- CHANGELOG V12.1 ---
-[FIX CRITICAL] Bổ sung bù sai số viền cửa sổ (sidebar/titlebar) cho LDPlayer, Nox, MEmu.
-[FIX HIGH]     Thêm timeout 45s cho MINIGAME_SLIDER — tránh kẹt vô hạn khi giả lập treo.
-[FIX HIGH]     Bọc toàn bộ mss.grab() bằng safe_grab() — bot tự phục hồi khi cửa sổ bị minimize.
-[FIX HIGH]     Catch FailSafeException & KeyboardInterrupt — không còn traceback đáng sợ.
-[FIX MEDIUM]   Đổi điều kiện xác nhận thả cần từ OR sang AND — tránh chuyển state sai trên máy lag.
-[FIX LOW]      Cảnh báo khi phát hiện nhiều cửa sổ giả lập cùng lúc.
+Cơ chế điều khiển:
+1. Nhận diện trạng thái nút câu qua không gian màu HSV:
+   - Xanh lá (green_px > 400): Nút sẵn sàng -> Quăng cần xuống nước.
+   - Xám (grey_px > 600): Cần đang dưới nước -> Đợi cá cắn, không click nhầm.
+   - Tím (purple_px > 700): Cá cắn câu -> Giật cần tức thì và quét minigame.
+   - Tối / Popup: Nhận thưởng tại toạ độ an toàn (Rel Y = 0.870), tránh nút X ở đáy.
+2. Quét minigame thanh trượt tốc độ cao (100+ FPS) bằng MSS + OpenCV.
+3. Tự động bù trừ viền cửa sổ và thanh công cụ theo từng giả lập.
+4. Nhấn giữ phím 'q' ở bất kỳ đâu để dừng bot an toàn.
 """
 
 import sys
@@ -120,20 +114,8 @@ def get_window_rect(hwnd: int) -> Tuple[int, int, int, int]:
 
 def get_game_viewport(hwnd: int, win_title: str) -> Tuple[int, int, int, int]:
     """
-    [FIX CRITICAL] Trả về (game_left, game_top, game_width, game_height) đã loại bỏ
-    sidebar công cụ & title bar của từng giả lập.
-
-    Tại sao cần hàm này?
-    - Tọa độ tỉ lệ (REL_X, REL_Y) tự scale theo kích thước cửa sổ → ổn với mọi màn hình.
-    - Nhưng sidebar (cột icon công cụ) có kích thước pixel CỐ ĐỊNH, không scale theo cửa sổ.
-    - Nếu không trừ sidebar, tọa độ sẽ bị lệch vào vùng icon công cụ thay vì vùng game.
-
-    Vị trí sidebar tùy từng giả lập:
-    - BlueStacks 5: sidebar bên PHẢI ~50px (cột icon camera, bàn phím, APK...)
-    - LDPlayer 9  : sidebar bên TRÁI ~55px (cột nút điều khiển)
-    - NoxPlayer   : sidebar bên TRÁI ~65px
-    - MuMu Player : không có sidebar
-    - MEmu        : sidebar bên TRÁI ~55px
+    Tính toạ độ vùng hiển thị game thực tế (game_left, game_top, game_width, game_height)
+    sau khi trừ đi thanh tiêu đề (title bar) và thanh công cụ (sidebar) của từng giả lập.
     """
     left, top, w, h = get_window_rect(hwnd)
     title_bar_px, sidebar_left_px, sidebar_right_px = 0, 0, 0
@@ -153,9 +135,8 @@ def get_game_viewport(hwnd: int, win_title: str) -> Tuple[int, int, int, int]:
 
 def safe_grab(sct, region: dict) -> Optional[np.ndarray]:
     """
-    [FIX HIGH] Chụp màn hình an toàn với xử lý lỗi đầy đủ.
-    Trả về ảnh BGR hoặc None nếu cửa sổ bị minimize / bị che khuất tạm thời.
-    Bot sẽ tự skip frame đó thay vì crash.
+    Chụp ảnh màn hình trong vùng chỉ định.
+    Trả về ảnh BGR, hoặc None nếu cửa sổ bị che khuất/minimize để tránh crash bot.
     """
     try:
         raw = sct.grab(region)
@@ -292,8 +273,7 @@ def main():
     except Exception:
         pass
 
-    # [FIX CRITICAL] Dùng get_game_viewport() thay vì get_window_rect() để loại bỏ
-    # sidebar & title bar của từng giả lập trước khi tính toạ độ tương đối.
+    # Bù viền cửa sổ và thanh công cụ theo từng giả lập trước khi tính toạ độ tương đối
     left, top, w, h = get_game_viewport(hwnd, win.title)
     raw_left, raw_top, raw_w, raw_h = get_window_rect(hwnd)
     log(f"[KẾT NỐI] Cửa sổ: '{win.title}'")
@@ -335,9 +315,7 @@ def main():
 
     log("[BẮT ĐẦU] Khởi động vòng lặp câu cá tự động...")
 
-    # [FIX HIGH] Bọc toàn bộ vòng lặp chính để catch các exception nguy hiểm.
-    # FailSafeException: xảy ra khi chuột vô tình chạm góc trên-trái màn hình.
-    # KeyboardInterrupt: Ctrl+C từ terminal.
+    # Bọc vòng lặp chính để xử lý an toàn ngoại lệ FailSafe và KeyboardInterrupt
     try:
         while True:
             if keyboard.is_pressed("q"):
@@ -346,18 +324,15 @@ def main():
 
             now = time.time()
 
-            # =============================================================
-            # BƯỚC 1: SẴN SÀNG THẢ CẦN (READY_TO_CAST)
-            # =============================================================
+            # Trạng thái 1: Chuẩn bị quăng cần
             if state == "READY_TO_CAST":
-                # [FIX HIGH] Dùng safe_grab() — tự phục hồi khi cửa sổ bị minimize
                 bgr = safe_grab(sct, btn_box)
                 if bgr is None:
                     time.sleep(0.5)
                     continue
                 green_px, grey_px, purple_px = analyze_button_colors(bgr)
 
-                # Ưu tiên 1: Cá cắn câu ngay trong lúc chờ (Nút tím > 700 px) -> Giật cần & kéo cá ngay!
+                # Ưu tiên 1: Cá cắn câu ngay trong lúc chờ -> Giật cần tức thì
                 if purple_px > config.PURPLE_PX_THRESHOLD:
                     log(f"[PHỤC HỒI NHANH] Cá đang cắn ({purple_px} px tím) -> GIẬT CẦN NGAY!")
                     rapid_tap(btn_screen_x, btn_screen_y)
@@ -366,23 +341,20 @@ def main():
                     log("[3/4] BẬT CHẾ ĐỘ QUÉT THANH TRƯỢT SIÊU TỐC (100+ FPS)...")
                     continue
 
-                # Ưu tiên 2: Cần câu ĐÃ Ở DƯỚI NƯỚC (Nút xám > 600 px) -> Chuyển sang chờ cá cắn!
-                # Giải quyết triệt để lỗi bot bấm nhầm khi cần đang thả dưới nước
+                # Ưu tiên 2: Cần câu đã ở dưới nước -> Giữ yên lặng chờ cá cắn
                 if grey_px > config.GREY_PX_THRESHOLD:
                     log(f"[PHỤC HỒI NHANH] Phát hiện cần câu đang ở dưới nước ({grey_px} px xám) -> Chuyển sang chờ cá cắn!")
                     state = "WAITING_BITE"
                     last_heartbeat = now
                     continue
 
-                # Ưu tiên 3: Nút xanh lá sẵn sàng trên bờ (green_px > 400 px) -> Quăng cần!
+                # Ưu tiên 3: Nút xanh lá trên bờ -> Quăng cần
                 if green_px > config.GREEN_PX_THRESHOLD:
                     log(f"[1/4] Thấy nút sẵn sàng ({green_px} px xanh) -> TIẾN HÀNH THẢ CẦN!")
                     touch_tap(btn_screen_x, btn_screen_y, desc="Nút quăng cần câu")
-                    time.sleep(1.2)  # Đợi cần bay xuống nước
+                    time.sleep(1.2)
 
-                    # [FIX MEDIUM] Xác nhận cần đã rơi xuống nước: dùng AND thay OR
-                    # Điều kiện cũ (OR) quá rộng: khi màn hình tối tạm thời (animation), c_green=0 < 250 → true ngay,
-                    # chuyển state sai. Điều kiện AND chắc chắn hơn: cả hai phải đồng thời thỏa mãn.
+                    # Xác nhận cần đã chạm nước bằng cả hai chỉ số màu
                     c_bgr = safe_grab(sct, btn_box)
                     if c_bgr is not None:
                         c_green, c_grey, _ = analyze_button_colors(c_bgr)
@@ -448,7 +420,7 @@ def main():
                 no_slider_since = 0.0
                 last_hit_time = 0.0
                 hit_count = 0
-                # [FIX HIGH] Ghi nhận thời điểm bắt đầu minigame để timeout sau 45 giây
+                # Giới hạn thời gian minigame để tự phục hồi nếu giả lập bị treo
                 minigame_start = time.time()
 
                 while True:
@@ -457,10 +429,9 @@ def main():
 
                     cur_t = time.time()
 
-                    # [FIX HIGH] Timeout minigame — tránh kẹt vô hạn khi giả lập treo
+                    # Thoát minigame khi vượt quá thời gian tối đa
                     if cur_t - minigame_start > config.MINIGAME_MAX_DURATION:
-                        log(f"[TIMEOUT] Minigame vượt quá {config.MINIGAME_MAX_DURATION}s! "
-                            f"Giả lập có thể bị lag hoặc treo. Tự reset vòng câu mới...")
+                        log(f"[TIMEOUT] Minigame vượt quá {config.MINIGAME_MAX_DURATION}s -> Tự reset vòng câu mới...")
                         state = "READY_TO_CAST"
                         wait_ready_start = time.time()
                         break

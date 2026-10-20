@@ -25,26 +25,17 @@ CLAIM_REL_X: float = 0.465
 CLAIM_REL_Y: float = 0.870
 
 # ==============================================================================
-# 2. BÙ SAI SỐ VIỀN CỬA SỔ ĐA GIẢ LẬP (FIX CRITICAL - SIDEBAR OFFSET)
+# 2. BÙ SAI SỐ VIỀN CỬA SỔ THEO TỪNG GIẢ LẬP
 # ==============================================================================
-# Mỗi giả lập có thanh tiêu đề (title bar) và thanh công cụ (sidebar) khác nhau.
-# Sidebar CÓ THỂ nằm bên TRÁI (LDPlayer, Nox, MEmu) hoặc bên PHẢI (BlueStacks).
-# Phải trừ phần sidebar ra trước khi nhân với tọa độ tỉ lệ.
-#
-# Cấu trúc: (title_bar_px, sidebar_left_px, sidebar_right_px)
-# - title_bar_px    : Chiều cao thanh tiêu đề phía trên (px)
-# - sidebar_left_px : Chiều rộng thanh công cụ bên TRÁI (px) — LDPlayer, Nox, MEmu
-# - sidebar_right_px: Chiều rộng thanh công cụ bên PHẢI (px) — BlueStacks 5
-#
-# Đo thực nghiệm trên chế độ Portrait 9:16 (720x1280 / 1080x1920).
+# Thông số bù trừ viền: (title_bar_px, sidebar_left_px, sidebar_right_px)
+# Đo đạc trên tỷ lệ dọc (Portrait 9:16) của từng phần mềm giả lập.
 EMULATOR_VIEWPORT_OFFSETS: dict = {
-    # Tên keyword (lowercase): (title_bar_px, sidebar_left_px, sidebar_right_px)
-    "bluestacks": (32, 0, 50),   # BlueStacks 5 — sidebar công cụ bên PHẢI ~50px
-    "app player": (32, 0, 50),   # BlueStacks App Player (tên cửa sổ thay thế)
-    "ldplayer":   (30, 55, 0),   # LDPlayer 9 — sidebar điều khiển bên TRÁI ~55px
-    "nox":        (30, 65, 0),   # NoxPlayer — sidebar bên TRÁI ~65px
-    "mumu":       (28, 0,  0),   # MuMu Player — không sidebar
-    "memu":       (30, 55, 0),   # MEmu — sidebar bên TRÁI ~55px
+    "bluestacks": (32, 0, 50),   # BlueStacks 5: thanh công cụ nằm bên phải ~50px
+    "app player": (32, 0, 50),   # BlueStacks App Player
+    "ldplayer":   (30, 55, 0),   # LDPlayer 9: thanh điều khiển bên trái ~55px
+    "nox":        (30, 65, 0),   # NoxPlayer: thanh điều khiển bên trái ~65px
+    "mumu":       (28, 0,  0),   # MuMu Player: không có sidebar
+    "memu":       (30, 55, 0),   # MEmu: thanh điều khiển bên trái ~55px
 }
 
 # ==============================================================================
