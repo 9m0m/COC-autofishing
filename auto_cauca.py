@@ -310,11 +310,11 @@ def main():
                 log(f"[Chờ sẵn sàng] Xanh: {green_px} px | Xám: {grey_px} px | Tím: {purple_px} px")
                 last_heartbeat = now
 
-            # Ưu tiên 4: Màn hình bị kẹt bảng popup tồn dư (các màu đều < 200) quá 3.5s -> Chạm giải phóng
-            if now - wait_ready_start > 3.5:
+            # Ưu tiên 4: Màn hình bị kẹt bảng popup tồn dư (các màu đều < 200) quá 2.5s -> Chạm giải phóng
+            if now - wait_ready_start > 2.5:
                 log("[GIẢI PHÓNG MÀN HÌNH] Chạm vị trí Nhận Ngay để giải phóng popup tồn dư...")
                 touch_tap(claim_screen_x, claim_screen_y, desc="Chạm vị trí Nhận Ngay (ngoài thẻ)")
-                time.sleep(1.0)
+                time.sleep(0.8)
                 wait_ready_start = time.time()
             else:
                 time.sleep(0.15)
@@ -408,14 +408,14 @@ def main():
         # TUYỆT ĐỐI KHÔNG CHẠM VÀO NÚT "X" Ở ĐÁY ĐỂ TRÁNH THOÁT GAME!
         # =============================================================
         elif state == "CLAIM_REWARD":
-            log("[4/4] Chờ hoạt ảnh cá nhảy & bảng quà xuất hiện ổn định (2.0s)...")
-            time.sleep(2.0)
+            log("[4/4] Chờ hoạt ảnh cá nhảy & bảng quà xuất hiện ổn định (1.6s)...")
+            time.sleep(1.6)
 
             # Chạm nhịp 1 vào vị trí Nhận Ngay (ngoài thẻ kỷ lục / trúng nút cá thường)
             touch_tap(claim_screen_x, claim_screen_y, desc="Chạm vị trí Nhận Ngay (Nhịp 1)")
 
-            # Khoảng trễ giữa 2 lần click (1.0s) để tránh xung đột hoạt ảnh
-            time.sleep(1.0)
+            # Khoảng trễ giữa 2 lần click (0.9s)
+            time.sleep(0.9)
 
             # Chạm nhịp 2 để xác nhận đóng hoàn toàn
             touch_tap(claim_screen_x, claim_screen_y, desc="Chạm vị trí Nhận Ngay (Nhịp 2 - Xác nhận)")
@@ -423,8 +423,8 @@ def main():
             fish_count += 1
             log(f"[HOÀN TẤT] >> Bạn đã câu thành công chú cá #{fish_count}! <<")
 
-            # Khoảng trễ 1.3s để game đóng hẳn bảng quà và nút xanh sẵn sàng ổn định
-            time.sleep(1.3)
+            # Khoảng trễ 1.0s để game đóng hẳn bảng quà và nút xanh sẵn sàng ổn định (Tổng chu trình đúng 3.5s)
+            time.sleep(1.0)
 
             state = "READY_TO_CAST"
             wait_ready_start = time.time()
