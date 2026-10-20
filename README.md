@@ -1,6 +1,12 @@
-# 🎣 AutoFishing-Android (Auto Câu Cá Siêu Tốc Đa Giả Lập)
+# 🎣 COC-autofishing (Auto Câu Cá Siêu Tốc Đa Giả Lập)
 
-> **Hệ thống tự động câu cá thông minh dựa trên thị giác máy tính thời gian thực (Computer Vision 100+ FPS) dành cho BlueStacks 5, LDPlayer 9, NoxPlayer, MuMu Player, MEmu.**
+> **Hệ thống tự động câu cá thông minh dựa trên thị giác máy tính thời gian thực (Computer Vision 100+ FPS) dành cho game Clash of Critters trên BlueStacks 5, LDPlayer 9, NoxPlayer, MuMu Player, MEmu.**
+
+---
+
+### ⚡ DÀNH CHO NGƯỜI DÙNG CUỐI (TẢI VỀ CHẠY NGAY):
+> ### 📥 [👉 BẤM VÀO ĐÂY ĐỂ TẢI BẢN MỚI NHẤT (auto_cauca.exe) 👈](https://github.com/9m0m/COC-autofishing/releases/latest)
+> *(Chỉ cần tải 1 file `auto_cauca.exe` về nhấp đúp là chạy, **không cần cài đặt Python**, tự động nhận diện giả lập 100%!)*
 
 ---
 
@@ -64,8 +70,8 @@
 ### 👉 Dành cho Developer
 ```bash
 # 1. Clone repository
-git clone https://github.com/<your-username>/AutoFishing-Android.git
-cd AutoFishing-Android
+git clone https://github.com/9m0m/COC-autofishing.git
+cd COC-autofishing
 
 # 2. Cài đặt thư viện
 pip install -r requirements.txt
@@ -84,8 +90,9 @@ python auto_cauca.py
 Nếu muốn chia sẻ cho bạn bè 1 file duy nhất để chạy ngay:
 ```bash
 pip install pyinstaller
-pyinstaller --onefile auto_cauca.py
+pyinstaller --onefile --add-data "config.py;." auto_cauca.py
 ```
+> ⚠️ **Lưu ý:** Bắt buộc phải có `--add-data "config.py;."` để đóng gói file cấu hình kèm theo.
 File `auto_cauca.exe` sẽ được tạo trong thư mục `dist\`.
 
 ---
@@ -93,7 +100,7 @@ File `auto_cauca.exe` sẽ được tạo trong thư mục `dist\`.
 ## 📁 Cấu Trúc Dự Án
 
 ```text
-├── auto_cauca.py          # Logic chính của Bot (State Machine V12)
+├── auto_cauca.py          # Logic chính của Bot (State Machine V12.1)
 ├── config.py              # Toạ độ tỉ lệ và ngưỡng màu HSV
 ├── test_preview.py        # Tool kiểm tra căn chỉnh khung hình trực quan
 ├── requirements.txt       # Danh sách thư viện Python phụ thuộc

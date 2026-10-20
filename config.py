@@ -25,7 +25,30 @@ CLAIM_REL_X: float = 0.465
 CLAIM_REL_Y: float = 0.870
 
 # ==============================================================================
-# 2. DẢI MÀU HSV & NGƯỠNG NHẬN DIỆN
+# 2. BÙ SAI SỐ VIỀN CỬA SỔ ĐA GIẢ LẬP (FIX CRITICAL - SIDEBAR OFFSET)
+# ==============================================================================
+# Mỗi giả lập có thanh tiêu đề (title bar) và thanh công cụ (sidebar) khác nhau.
+# Sidebar CÓ THỂ nằm bên TRÁI (LDPlayer, Nox, MEmu) hoặc bên PHẢI (BlueStacks).
+# Phải trừ phần sidebar ra trước khi nhân với tọa độ tỉ lệ.
+#
+# Cấu trúc: (title_bar_px, sidebar_left_px, sidebar_right_px)
+# - title_bar_px    : Chiều cao thanh tiêu đề phía trên (px)
+# - sidebar_left_px : Chiều rộng thanh công cụ bên TRÁI (px) — LDPlayer, Nox, MEmu
+# - sidebar_right_px: Chiều rộng thanh công cụ bên PHẢI (px) — BlueStacks 5
+#
+# Đo thực nghiệm trên chế độ Portrait 9:16 (720x1280 / 1080x1920).
+EMULATOR_VIEWPORT_OFFSETS: dict = {
+    # Tên keyword (lowercase): (title_bar_px, sidebar_left_px, sidebar_right_px)
+    "bluestacks": (32, 0, 50),   # BlueStacks 5 — sidebar công cụ bên PHẢI ~50px
+    "app player": (32, 0, 50),   # BlueStacks App Player (tên cửa sổ thay thế)
+    "ldplayer":   (30, 55, 0),   # LDPlayer 9 — sidebar điều khiển bên TRÁI ~55px
+    "nox":        (30, 65, 0),   # NoxPlayer — sidebar bên TRÁI ~65px
+    "mumu":       (28, 0,  0),   # MuMu Player — không sidebar
+    "memu":       (30, 55, 0),   # MEmu — sidebar bên TRÁI ~55px
+}
+
+# ==============================================================================
+# 3. DẢI MÀU HSV & NGƯỠNG NHẬN DIỆN
 # ==============================================================================
 # Trạng thái 1: Nút xanh lá sẵn sàng thả cần (Trên bờ)
 HSV_READY_GREEN_LOWER = [35, 70, 70]
@@ -54,3 +77,11 @@ HSV_RED_LOWER1 = [0, 90, 90]
 HSV_RED_UPPER1 = [12, 255, 255]
 HSV_RED_LOWER2 = [168, 90, 90]
 HSV_RED_UPPER2 = [180, 255, 255]
+
+# ==============================================================================
+# 4. GIỚI HẠN THỜI GIAN AN TOÀN
+# ==============================================================================
+# Timeout tối đa cho 1 ván kéo cá (MINIGAME_SLIDER).
+# Nếu vượt quá giới hạn này mà vẫn chưa kết thúc -> tự reset vòng câu mới.
+# Giá trị 45s đủ cho cả cá kỷ lục lớn nhất.
+MINIGAME_MAX_DURATION: int = 45

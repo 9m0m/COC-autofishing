@@ -1,5 +1,5 @@
 """
-AUTO CÂU CÁ ĐA GIẢ LẬP (BẢN V12 - STATE MACHINE CHUẨN XÁC & KHÓA CHẶT MINIGAME)
+AUTO CÂU CÁ ĐA GIẢ LẬP (BẢN V12.1 - STATE MACHINE CHUẨN XÁC & KHÓA CHẶT MINIGAME)
 Hỗ trợ: BlueStacks 5, LDPlayer 9, NoxPlayer, MuMu Player, MEmu.
 
 Cơ chế điều khiển thông minh theo 4 trạng thái màu nút bấm (Button State Machine):
@@ -9,6 +9,14 @@ Cơ chế điều khiển thông minh theo 4 trạng thái màu nút bấm (Butt
 4. TỐI / MODAL (các màu đều < 200): Popup mở ra -> Chạm 2 nhịp vào nút Nhận Ngay (Rel Y = 0.870) an toàn.
 
 Nhấn giữ phím 'q' trên bàn phím để dừng bot an toàn bất kỳ lúc nào.
+
+--- CHANGELOG V12.1 ---
+[FIX CRITICAL] Bổ sung bù sai số viền cửa sổ (sidebar/titlebar) cho LDPlayer, Nox, MEmu.
+[FIX HIGH]     Thêm timeout 45s cho MINIGAME_SLIDER — tránh kẹt vô hạn khi giả lập treo.
+[FIX HIGH]     Bọc toàn bộ mss.grab() bằng safe_grab() — bot tự phục hồi khi cửa sổ bị minimize.
+[FIX HIGH]     Catch FailSafeException & KeyboardInterrupt — không còn traceback đáng sợ.
+[FIX MEDIUM]   Đổi điều kiện xác nhận thả cần từ OR sang AND — tránh chuyển state sai trên máy lag.
+[FIX LOW]      Cảnh báo khi phát hiện nhiều cửa sổ giả lập cùng lúc.
 """
 
 import sys
@@ -62,8 +70,10 @@ def find_emulator_window() -> Optional[gw.Window]:
     """
     Tự động tìm kiếm cửa sổ của các giả lập Android phổ biến:
     BlueStacks, LDPlayer, NoxPlayer, MuMu Player, MEmu.
+    Cảnh báo nếu phát hiện nhiều cửa sổ giả lập cùng lúc.
     """
     targets = ["BlueStacks", "App Player", "LDPlayer", "Nox", "MuMu", "MEmu"]
+    found: list = []
     try:
         for w in gw.getAllWindows():
             title = w.title
@@ -77,9 +87,17 @@ def find_emulator_window() -> Optional[gw.Window]:
                     height = rect.bottom - rect.top
                     # Kiểm tra kích thước hợp lệ của cửa sổ giả lập (tránh các cửa sổ chạy ngầm)
                     if width > 250 and height > 400:
-                        return w
+                        found.append(w)
+                        break  # Không đếm trùng 1 cửa sổ nhiều lần
     except Exception:
         pass
+
+    if len(found) > 1:
+        log(f"[CẢNH BÁO] Phát hiện {len(found)} cửa sổ giả lập đang chạy!")
+        log(f"[CẢNH BÁO] Bot sẽ dùng cửa sổ đầu tiên: '{found[0].title}'")
+        log("[CẢNH BÁO] Nếu muốn dùng cửa sổ khác, hãy đóng bớt các giả lập còn lại.")
+    if found:
+        return found[0]
 
     # Dự phòng tìm theo getWindowsWithTitle
     for t in targets:
@@ -98,6 +116,59 @@ def get_window_rect(hwnd: int) -> Tuple[int, int, int, int]:
     rect = wintypes.RECT()
     user32.GetWindowRect(hwnd, ctypes.byref(rect))
     return rect.left, rect.top, rect.right - rect.left, rect.bottom - rect.top
+
+
+def get_game_viewport(hwnd: int, win_title: str) -> Tuple[int, int, int, int]:
+    """
+    [FIX CRITICAL] Trả về (game_left, game_top, game_width, game_height) đã loại bỏ
+    sidebar công cụ & title bar của từng giả lập.
+
+    Tại sao cần hàm này?
+    - Tọa độ tỉ lệ (REL_X, REL_Y) tự scale theo kích thước cửa sổ → ổn với mọi màn hình.
+    - Nhưng sidebar (cột icon công cụ) có kích thước pixel CỐ ĐỊNH, không scale theo cửa sổ.
+    - Nếu không trừ sidebar, tọa độ sẽ bị lệch vào vùng icon công cụ thay vì vùng game.
+
+    Vị trí sidebar tùy từng giả lập:
+    - BlueStacks 5: sidebar bên PHẢI ~50px (cột icon camera, bàn phím, APK...)
+    - LDPlayer 9  : sidebar bên TRÁI ~55px (cột nút điều khiển)
+    - NoxPlayer   : sidebar bên TRÁI ~65px
+    - MuMu Player : không có sidebar
+    - MEmu        : sidebar bên TRÁI ~55px
+    """
+    left, top, w, h = get_window_rect(hwnd)
+    title_bar_px, sidebar_left_px, sidebar_right_px = 0, 0, 0
+    title_lower = win_title.lower()
+    for keyword, (tb, sl, sr) in config.EMULATOR_VIEWPORT_OFFSETS.items():
+        if keyword in title_lower:
+            title_bar_px  = tb
+            sidebar_left_px  = sl
+            sidebar_right_px = sr
+            break
+    game_left = left + sidebar_left_px
+    game_top  = top  + title_bar_px
+    game_w    = w    - sidebar_left_px - sidebar_right_px
+    game_h    = h    - title_bar_px
+    return game_left, game_top, game_w, game_h
+
+
+def safe_grab(sct, region: dict) -> Optional[np.ndarray]:
+    """
+    [FIX HIGH] Chụp màn hình an toàn với xử lý lỗi đầy đủ.
+    Trả về ảnh BGR hoặc None nếu cửa sổ bị minimize / bị che khuất tạm thời.
+    Bot sẽ tự skip frame đó thay vì crash.
+    """
+    try:
+        raw = sct.grab(region)
+        if raw is None:
+            return None
+        img = np.array(raw)
+        if img.size == 0:
+            return None
+        return cv2.cvtColor(img, cv2.COLOR_BGRA2BGR)
+    except Exception as e:
+        log(f"[CẢNH BÁO] Lỗi chụp màn hình ({e}). Giả lập bị minimize? Bot đang thử lại...")
+        time.sleep(0.5)
+        return None
 
 
 def touch_tap(x: int, y: int, desc: str = "") -> None:
@@ -195,7 +266,7 @@ def detect_yellow_and_bobber(roi_img: np.ndarray) -> Tuple[Optional[Tuple[int, i
 
 def main():
     print("=" * 68)
-    print("   🎣 AUTO CÂU CÁ ĐA GIẢ LẬP (BẢN V12 - STATE MACHINE CHUẨN XÁC)")
+    print("   🎣 AUTO CÂU CÁ ĐA GIẢ LẬP (BẢN V12.1 - STATE MACHINE CHUẨN XÁC)")
     print("=" * 68)
     print("(*) Hỗ trợ: BlueStacks 5, LDPlayer 9, NoxPlayer, MuMu Player, MEmu.")
     print("(*) Nhấn giữ phím 'q' trên bàn phím để DỪNG AUTO an toàn.")
@@ -204,8 +275,15 @@ def main():
 
     win = find_emulator_window()
     if not win:
-        log("[LỖI] Không tìm thấy cửa sổ giả lập. Vui lòng mở game trước khi chạy tool!")
-        return
+        log("[CHỜ ĐỢI] Chưa phát hiện cửa sổ giả lập nào (BlueStacks, LDPlayer, Nox, MuMu, MEmu)...")
+        log("[HƯỚNG DẪN] Bạn hãy mở giả lập và vào game, bot sẽ tự động nhận diện và kết nối!")
+        log("(*) Hoặc nhấn giữ phím 'q' để huỷ bỏ.")
+        while not win:
+            time.sleep(1.2)
+            if keyboard.is_pressed("q"):
+                log("\n[DỪNG] Người dùng đã huỷ bỏ tìm kiếm.")
+                return
+            win = find_emulator_window()
 
     hwnd = win._hWnd
     try:
@@ -214,9 +292,13 @@ def main():
     except Exception:
         pass
 
-    left, top, w, h = get_window_rect(hwnd)
+    # [FIX CRITICAL] Dùng get_game_viewport() thay vì get_window_rect() để loại bỏ
+    # sidebar & title bar của từng giả lập trước khi tính toạ độ tương đối.
+    left, top, w, h = get_game_viewport(hwnd, win.title)
+    raw_left, raw_top, raw_w, raw_h = get_window_rect(hwnd)
     log(f"[KẾT NỐI] Cửa sổ: '{win.title}'")
-    log(f"[TOẠ ĐỘ CỬA SỔ] Left={left}, Top={top}, Width={w}, Height={h}")
+    log(f"[CỬA SỔ THỰC]  Left={raw_left}, Top={raw_top}, Width={raw_w}, Height={raw_h}")
+    log(f"[VÙNG GAME]    Left={left}, Top={top}, Width={w}, Height={h}  (đã bù sidebar/titlebar)")
 
     btn_screen_x = int(left + w * config.BUTTON_REL_X)
     btn_screen_y = int(top + h * config.BUTTON_REL_Y)
@@ -253,185 +335,223 @@ def main():
 
     log("[BẮT ĐẦU] Khởi động vòng lặp câu cá tự động...")
 
-    while True:
-        if keyboard.is_pressed("q"):
-            log("\n[DỪNG KHẨN CẤP] Người dùng đã nhấn phím 'q'. Thoát bot an toàn!")
-            break
+    # [FIX HIGH] Bọc toàn bộ vòng lặp chính để catch các exception nguy hiểm.
+    # FailSafeException: xảy ra khi chuột vô tình chạm góc trên-trái màn hình.
+    # KeyboardInterrupt: Ctrl+C từ terminal.
+    try:
+        while True:
+            if keyboard.is_pressed("q"):
+                log("\n[DỪNG KHẨN CẤP] Người dùng đã nhấn phím 'q'. Thoát bot an toàn!")
+                break
 
-        now = time.time()
+            now = time.time()
 
-        # =============================================================
-        # BƯỚC 1: SẴN SÀNG THẢ CẦN (READY_TO_CAST)
-        # =============================================================
-        if state == "READY_TO_CAST":
-            btn_img = np.array(sct.grab(btn_box))
-            bgr = cv2.cvtColor(btn_img, cv2.COLOR_BGRA2BGR)
-            green_px, grey_px, purple_px = analyze_button_colors(bgr)
+            # =============================================================
+            # BƯỚC 1: SẴN SÀNG THẢ CẦN (READY_TO_CAST)
+            # =============================================================
+            if state == "READY_TO_CAST":
+                # [FIX HIGH] Dùng safe_grab() — tự phục hồi khi cửa sổ bị minimize
+                bgr = safe_grab(sct, btn_box)
+                if bgr is None:
+                    time.sleep(0.5)
+                    continue
+                green_px, grey_px, purple_px = analyze_button_colors(bgr)
 
-            # Ưu tiên 1: Cá cắn câu ngay trong lúc chờ (Nút tím > 700 px) -> Giật cần & kéo cá ngay!
-            if purple_px > config.PURPLE_PX_THRESHOLD:
-                log(f"[PHỤC HỒI NHANH] Cá đang cắn ({purple_px} px tím) -> GIẬT CẦN NGAY!")
-                rapid_tap(btn_screen_x, btn_screen_y)
-                time.sleep(0.35)
-                state = "MINIGAME_SLIDER"
-                log("[3/4] BẬT CHẾ ĐỘ QUÉT THANH TRƯỢT SIÊU TỐC (100+ FPS)...")
-                continue
+                # Ưu tiên 1: Cá cắn câu ngay trong lúc chờ (Nút tím > 700 px) -> Giật cần & kéo cá ngay!
+                if purple_px > config.PURPLE_PX_THRESHOLD:
+                    log(f"[PHỤC HỒI NHANH] Cá đang cắn ({purple_px} px tím) -> GIẬT CẦN NGAY!")
+                    rapid_tap(btn_screen_x, btn_screen_y)
+                    time.sleep(0.35)
+                    state = "MINIGAME_SLIDER"
+                    log("[3/4] BẬT CHẾ ĐỘ QUÉT THANH TRƯỢT SIÊU TỐC (100+ FPS)...")
+                    continue
 
-            # Ưu tiên 2: Cần câu ĐÃ Ở DƯỚI NƯỚC (Nút xám > 600 px) -> Chuyển sang chờ cá cắn!
-            # Giải quyết triệt để lỗi bot bấm nhầm khi cần đang thả dưới nước
-            if grey_px > config.GREY_PX_THRESHOLD:
-                log(f"[PHỤC HỒI NHANH] Phát hiện cần câu đang ở dưới nước ({grey_px} px xám) -> Chuyển sang chờ cá cắn!")
-                state = "WAITING_BITE"
-                last_heartbeat = now
-                continue
-
-            # Ưu tiên 3: Nút xanh lá sẵn sàng trên bờ (green_px > 400 px) -> Quăng cần!
-            if green_px > config.GREEN_PX_THRESHOLD:
-                log(f"[1/4] Thấy nút sẵn sàng ({green_px} px xanh) -> TIẾN HÀNH THẢ CẦN!")
-                touch_tap(btn_screen_x, btn_screen_y, desc="Nút quăng cần câu")
-                time.sleep(1.2)  # Đợi cần bay xuống nước
-
-                # Xác nhận lại xem cần đã rơi xuống nước chưa
-                check_img = np.array(sct.grab(btn_box))
-                c_bgr = cv2.cvtColor(check_img, cv2.COLOR_BGRA2BGR)
-                c_green, c_grey, _ = analyze_button_colors(c_bgr)
-
-                if c_green < 250 or c_grey > 400:
-                    log("[2/4] Cần đã xuống nước thành công! Chuyển sang chờ cá cắn...")
+                # Ưu tiên 2: Cần câu ĐÃ Ở DƯỚI NƯỚC (Nút xám > 600 px) -> Chuyển sang chờ cá cắn!
+                # Giải quyết triệt để lỗi bot bấm nhầm khi cần đang thả dưới nước
+                if grey_px > config.GREY_PX_THRESHOLD:
+                    log(f"[PHỤC HỒI NHANH] Phát hiện cần câu đang ở dưới nước ({grey_px} px xám) -> Chuyển sang chờ cá cắn!")
                     state = "WAITING_BITE"
-                    last_heartbeat = time.time()
+                    last_heartbeat = now
+                    continue
+
+                # Ưu tiên 3: Nút xanh lá sẵn sàng trên bờ (green_px > 400 px) -> Quăng cần!
+                if green_px > config.GREEN_PX_THRESHOLD:
+                    log(f"[1/4] Thấy nút sẵn sàng ({green_px} px xanh) -> TIẾN HÀNH THẢ CẦN!")
+                    touch_tap(btn_screen_x, btn_screen_y, desc="Nút quăng cần câu")
+                    time.sleep(1.2)  # Đợi cần bay xuống nước
+
+                    # [FIX MEDIUM] Xác nhận cần đã rơi xuống nước: dùng AND thay OR
+                    # Điều kiện cũ (OR) quá rộng: khi màn hình tối tạm thời (animation), c_green=0 < 250 → true ngay,
+                    # chuyển state sai. Điều kiện AND chắc chắn hơn: cả hai phải đồng thời thỏa mãn.
+                    c_bgr = safe_grab(sct, btn_box)
+                    if c_bgr is not None:
+                        c_green, c_grey, _ = analyze_button_colors(c_bgr)
+                        if c_green < 250 and c_grey > 300:
+                            log("[2/4] Cần đã xuống nước thành công! Chuyển sang chờ cá cắn...")
+                            state = "WAITING_BITE"
+                            last_heartbeat = time.time()
+                        else:
+                            log("[THỬ LẠI] Cú chạm chưa ăn (nút vẫn xanh) -> Thử chạm lại...")
+                            time.sleep(0.2)
+                    continue
+
+                # In nhịp tim mỗi 1.2s để theo dõi trạng thái
+                if now - last_heartbeat > 1.2:
+                    log(f"[Chờ sẵn sàng] Xanh: {green_px} px | Xám: {grey_px} px | Tím: {purple_px} px")
+                    last_heartbeat = now
+
+                # Ưu tiên 4: Màn hình bị kẹt bảng popup tồn dư (các màu đều < 200) quá 2.5s -> Chạm giải phóng
+                if now - wait_ready_start > 2.5:
+                    log("[GIẢI PHÓNG MÀN HÌNH] Chạm vị trí Nhận Ngay để giải phóng popup tồn dư...")
+                    touch_tap(claim_screen_x, claim_screen_y, desc="Chạm vị trí Nhận Ngay (ngoài thẻ)")
+                    time.sleep(0.8)
+                    wait_ready_start = time.time()
                 else:
-                    log("[THỬ LẠI] Cú chạm chưa ăn (nút vẫn xanh) -> Thử chạm lại...")
-                    time.sleep(0.2)
-                continue
+                    time.sleep(0.15)
 
-            # In nhịp tim mỗi 1.2s để theo dõi trạng thái
-            if now - last_heartbeat > 1.2:
-                log(f"[Chờ sẵn sàng] Xanh: {green_px} px | Xám: {grey_px} px | Tím: {purple_px} px")
-                last_heartbeat = now
+            # =============================================================
+            # BƯỚC 2: CHỜ CÁ CẮN CÂU (WAITING_BITE)
+            # =============================================================
+            elif state == "WAITING_BITE":
+                bgr = safe_grab(sct, btn_box)
+                if bgr is None:
+                    time.sleep(0.5)
+                    continue
+                green_px, grey_px, purple_px = analyze_button_colors(bgr)
 
-            # Ưu tiên 4: Màn hình bị kẹt bảng popup tồn dư (các màu đều < 200) quá 2.5s -> Chạm giải phóng
-            if now - wait_ready_start > 2.5:
-                log("[GIẢI PHÓNG MÀN HÌNH] Chạm vị trí Nhận Ngay để giải phóng popup tồn dư...")
-                touch_tap(claim_screen_x, claim_screen_y, desc="Chạm vị trí Nhận Ngay (ngoài thẻ)")
-                time.sleep(0.8)
-                wait_ready_start = time.time()
-            else:
-                time.sleep(0.15)
+                # Trường hợp cần bị thu về bờ (nút lại xanh > 400 px) -> Quay lại thả cần
+                if green_px > config.GREEN_PX_THRESHOLD:
+                    log(f"[PHỤC HỒI NHỊP] Cần câu đã ở trên bờ (nút còn {green_px} px xanh) -> Thả cần lại ngay!")
+                    state = "READY_TO_CAST"
+                    wait_ready_start = time.time()
+                    continue
 
-        # =============================================================
-        # BƯỚC 2: CHỜ CÁ CẮN CÂU (WAITING_BITE)
-        # =============================================================
-        elif state == "WAITING_BITE":
-            btn_img = np.array(sct.grab(btn_box))
-            bgr = cv2.cvtColor(btn_img, cv2.COLOR_BGRA2BGR)
-            green_px, grey_px, purple_px = analyze_button_colors(bgr)
+                # In log trạng thái mỗi 2 giây
+                if now - last_heartbeat > 2.0:
+                    log(f"[Đang thả câu dưới nước] Nút xám: {grey_px} px (Tím: {purple_px} px, cần > 700 px) -> Đang chờ cá đớp...")
+                    last_heartbeat = now
 
-            # Trường hợp cần bị thu về bờ (nút lại xanh > 400 px) -> Quay lại thả cần
-            if green_px > config.GREEN_PX_THRESHOLD:
-                log(f"[PHỤC HỒI NHỊP] Cần câu đã ở trên bờ (nút còn {green_px} px xanh) -> Thả cần lại ngay!")
+                # CÁ ĐÃ CẮN CÂU THỰC SỰ! (Nút đổi sang màu tím rực rỡ > 700 px)
+                if purple_px > config.PURPLE_PX_THRESHOLD:
+                    log(f"[2/4] >> CÁ ĐÃ CẮN CÂU THỰC SỰ! ({purple_px} px tím) -> GIẬT CẦN LẬP TỨC! <<")
+                    rapid_tap(btn_screen_x, btn_screen_y)
+                    time.sleep(0.35)
+                    state = "MINIGAME_SLIDER"
+                    log("[3/4] BẬT CHẾ ĐỘ QUÉT THANH TRƯỢT SIÊU TỐC (100+ FPS)...")
+                else:
+                    time.sleep(0.015)
+
+            # =============================================================
+            # BƯỚC 3: MINI-GAME THANH TRƯỢT (MINIGAME_SLIDER)
+            # =============================================================
+            elif state == "MINIGAME_SLIDER":
+                no_slider_since = 0.0
+                last_hit_time = 0.0
+                hit_count = 0
+                # [FIX HIGH] Ghi nhận thời điểm bắt đầu minigame để timeout sau 45 giây
+                minigame_start = time.time()
+
+                while True:
+                    if keyboard.is_pressed("q"):
+                        return
+
+                    cur_t = time.time()
+
+                    # [FIX HIGH] Timeout minigame — tránh kẹt vô hạn khi giả lập treo
+                    if cur_t - minigame_start > config.MINIGAME_MAX_DURATION:
+                        log(f"[TIMEOUT] Minigame vượt quá {config.MINIGAME_MAX_DURATION}s! "
+                            f"Giả lập có thể bị lag hoặc treo. Tự reset vòng câu mới...")
+                        state = "READY_TO_CAST"
+                        wait_ready_start = time.time()
+                        break
+
+                    s_bgr = safe_grab(sct, slider_box)
+                    if s_bgr is None:
+                        time.sleep(0.05)
+                        continue
+
+                    yellow_range, bobber_x = detect_yellow_and_bobber(s_bgr)
+
+                    if yellow_range is None:
+                        # Kiểm tra nút câu cá ở đáy xem còn màu TÍM (lưỡi câu dưới nước) không
+                        b_bgr = safe_grab(sct, btn_box)
+                        if b_bgr is None:
+                            time.sleep(0.05)
+                            continue
+                        _, _, purple_px = analyze_button_colors(b_bgr)
+
+                        if purple_px > config.PURPLE_PX_THRESHOLD:
+                            # Nút vẫn TÍM -> Game VẪN ĐANG TRONG TRẬN CÂU CÁ (chưa kết thúc)!
+                            # Chữ 'Hoàn hảo!' hoặc ô vàng đang dịch chuyển nên thanh trượt tạm ẩn
+                            no_slider_since = 0.0
+                            time.sleep(0.01)
+                            continue
+                        else:
+                            # Nút tím đã biến mất hẳn (< 700 px) -> Cá đã được kéo lên bờ thành công!
+                            if no_slider_since == 0.0:
+                                no_slider_since = cur_t
+                            if cur_t - no_slider_since > 0.8:
+                                log(f"[3/4] Kéo cá hoàn tất (Đã đạt {hit_count} nhịp Hoàn Hảo)! Chuyển sang nhận quà.")
+                                state = "CLAIM_REWARD"
+                                break
+                            time.sleep(0.015)
+                            continue
+                    else:
+                        no_slider_since = 0.0
+
+                    # Nhấp chuột siêu tốc khi phao trúng ô vàng
+                    if bobber_x is not None:
+                        ystart, yend = yellow_range
+                        if (ystart - 5) <= bobber_x <= (yend + 5):
+                            if cur_t - last_hit_time > 0.16:
+                                rapid_tap(btn_screen_x, btn_screen_y)
+                                hit_count += 1
+                                log(f"  -> [HOÀN HẢO #{hit_count}] Phao ({bobber_x}) trúng ô vàng [{ystart}, {yend}]")
+                                last_hit_time = cur_t
+
+            # =============================================================
+            # BƯỚC 4: NHẬN QUÀ / ĐÓNG POPUP (CLAIM_REWARD)
+            # CHẠM 2 NHỊP CHẬM RÃI VÀO VỊ TRÍ NÚT "NHẬN NGAY" (Rel Y = 0.870)
+            # TUYỆT ĐỐI KHÔNG CHẠM VÀO NÚT "X" Ở ĐÁY ĐỂ TRÁNH THOÁT GAME!
+            # =============================================================
+            elif state == "CLAIM_REWARD":
+                log("[4/4] Chờ hoạt ảnh cá nhảy & bảng quà xuất hiện ổn định (1.6s)...")
+                time.sleep(1.6)
+
+                # Chạm nhịp 1 vào vị trí Nhận Ngay (ngoài thẻ kỷ lục / trúng nút cá thường)
+                touch_tap(claim_screen_x, claim_screen_y, desc="Chạm vị trí Nhận Ngay (Nhịp 1)")
+
+                # Khoảng trễ giữa 2 lần click (0.9s)
+                time.sleep(0.9)
+
+                # Chạm nhịp 2 để xác nhận đóng hoàn toàn
+                touch_tap(claim_screen_x, claim_screen_y, desc="Chạm vị trí Nhận Ngay (Nhịp 2 - Xác nhận)")
+
+                fish_count += 1
+                log(f"[HOÀN TẤT] >> Bạn đã câu thành công chú cá #{fish_count}! <<")
+
+                # Khoảng trễ 1.0s để game đóng hẳn bảng quà và nút xanh sẵn sàng ổn định (Tổng chu trình đúng 3.5s)
+                time.sleep(1.0)
+
                 state = "READY_TO_CAST"
                 wait_ready_start = time.time()
-                continue
+                log("=" * 45)
+                log("[VÒNG MỚI] Đang chờ nút câu cá sẵn sàng...")
+                last_heartbeat = time.time()
 
-            # In log trạng thái mỗi 2 giây
-            if now - last_heartbeat > 2.0:
-                log(f"[Đang thả câu dưới nước] Nút xám: {grey_px} px (Tím: {purple_px} px, cần > 700 px) -> Đang chờ cá đớp...")
-                last_heartbeat = now
-
-            # CÁ ĐÃ CẮN CÂU THỰC SỰ! (Nút đổi sang màu tím rực rỡ > 700 px)
-            if purple_px > config.PURPLE_PX_THRESHOLD:
-                log(f"[2/4] >> CÁ ĐÃ CẮN CÂU THỰC SỰ! ({purple_px} px tím) -> GIẬT CẦN LẬP TỨC! <<")
-                rapid_tap(btn_screen_x, btn_screen_y)
-                time.sleep(0.35)
-                state = "MINIGAME_SLIDER"
-                log("[3/4] BẬT CHẾ ĐỘ QUÉT THANH TRƯỢT SIÊU TỐC (100+ FPS)...")
-            else:
-                time.sleep(0.015)
-
-        # =============================================================
-        # BƯỚC 3: MINI-GAME THANH TRƯỢT (MINIGAME_SLIDER)
-        # =============================================================
-        elif state == "MINIGAME_SLIDER":
-            no_slider_since = 0
-            last_hit_time = 0
-            hit_count = 0
-
-            while True:
-                if keyboard.is_pressed("q"):
-                    return
-
-                cur_t = time.time()
-                slider_img = np.array(sct.grab(slider_box))
-                s_bgr = cv2.cvtColor(slider_img, cv2.COLOR_BGRA2BGR)
-
-                yellow_range, bobber_x = detect_yellow_and_bobber(s_bgr)
-
-                if yellow_range is None:
-                    # Kiểm tra nút câu cá ở đáy xem còn màu TÍM (lưỡi câu dưới nước) không
-                    btn_img = np.array(sct.grab(btn_box))
-                    b_bgr = cv2.cvtColor(btn_img, cv2.COLOR_BGRA2BGR)
-                    _, _, purple_px = analyze_button_colors(b_bgr)
-
-                    if purple_px > config.PURPLE_PX_THRESHOLD:
-                        # Nút vẫn TÍM -> Game VẪN ĐANG TRONG TRẬN CÂU CÁ (chưa kết thúc)!
-                        # Chữ 'Hoàn hảo!' hoặc ô vàng đang dịch chuyển nên thanh trượt tạm ẩn
-                        no_slider_since = 0
-                        time.sleep(0.01)
-                        continue
-                    else:
-                        # Nút tím đã biến mất hẳn (< 700 px) -> Cá đã được kéo lên bờ thành công!
-                        if no_slider_since == 0:
-                            no_slider_since = cur_t
-                        if cur_t - no_slider_since > 0.8:
-                            log(f"[3/4] Kéo cá hoàn tất (Đã đạt {hit_count} nhịp Hoàn Hảo)! Chuyển sang nhận quà.")
-                            state = "CLAIM_REWARD"
-                            break
-                        time.sleep(0.015)
-                        continue
-                else:
-                    no_slider_since = 0
-
-                # Nhấp chuột siêu tốc khi phao trúng ô vàng
-                if bobber_x is not None:
-                    ystart, yend = yellow_range
-                    if (ystart - 5) <= bobber_x <= (yend + 5):
-                        if cur_t - last_hit_time > 0.16:
-                            rapid_tap(btn_screen_x, btn_screen_y)
-                            hit_count += 1
-                            log(f"  -> [HOÀN HẢO #{hit_count}] Phao ({bobber_x}) trúng ô vàng [{ystart}, {yend}]")
-                            last_hit_time = cur_t
-
-        # =============================================================
-        # BƯỚC 4: NHẬN QUÀ / ĐÓNG POPUP (CLAIM_REWARD)
-        # CHẠM 2 NHỊP CHẬM RÃI VÀO VỊ TRÍ NÚT "NHẬN NGAY" (Rel Y = 0.870)
-        # TUYỆT ĐỐI KHÔNG CHẠM VÀO NÚT "X" Ở ĐÁY ĐỂ TRÁNH THOÁT GAME!
-        # =============================================================
-        elif state == "CLAIM_REWARD":
-            log("[4/4] Chờ hoạt ảnh cá nhảy & bảng quà xuất hiện ổn định (1.6s)...")
-            time.sleep(1.6)
-
-            # Chạm nhịp 1 vào vị trí Nhận Ngay (ngoài thẻ kỷ lục / trúng nút cá thường)
-            touch_tap(claim_screen_x, claim_screen_y, desc="Chạm vị trí Nhận Ngay (Nhịp 1)")
-
-            # Khoảng trễ giữa 2 lần click (0.9s)
-            time.sleep(0.9)
-
-            # Chạm nhịp 2 để xác nhận đóng hoàn toàn
-            touch_tap(claim_screen_x, claim_screen_y, desc="Chạm vị trí Nhận Ngay (Nhịp 2 - Xác nhận)")
-
-            fish_count += 1
-            log(f"[HOÀN TẤT] >> Bạn đã câu thành công chú cá #{fish_count}! <<")
-
-            # Khoảng trễ 1.0s để game đóng hẳn bảng quà và nút xanh sẵn sàng ổn định (Tổng chu trình đúng 3.5s)
-            time.sleep(1.0)
-
-            state = "READY_TO_CAST"
-            wait_ready_start = time.time()
-            log("=" * 45)
-            log("[VÒNG MỚI] Đang chờ nút câu cá sẵn sàng...")
-            last_heartbeat = time.time()
-
-
-if __name__ == "__main__":
-    main()
+    except pyautogui.FailSafeException:
+        log("\n[AN TOÀN] Di chuột vào góc màn hình -> Dừng bot an toàn! (FailSafe kích hoạt)")
+    except KeyboardInterrupt:
+        log("\n[AN TOÀN] Ctrl+C -> Thoát bot.")
+    except Exception as e:
+        log(f"\n[LỖI BẤT NGỜ] {type(e).__name__}: {e}")
+        log("[GỢI Ý] Hãy báo lỗi này cho tác giả để được hỗ trợ.")
+    finally:
+        log("[KẾT THÚC] Bot đã dừng hoàn toàn.")
+        # Nếu chạy dạng file .exe độc lập, giữ màn hình để người dùng đọc thông tin
+        if getattr(sys, "frozen", False):
+            print("\nNhấn Enter để đóng cửa sổ...")
+            try:
+                input()
+            except Exception:
+                pass

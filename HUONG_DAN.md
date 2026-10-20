@@ -49,10 +49,11 @@ Nếu bạn muốn gửi cho bạn bè chỉ duy nhất 1 file `.exe`:
    ```cmd
    pip install pyinstaller
    ```
-2. Đóng gói code thành file exe:
+2. Đóng gói code thành file exe (bắt buộc đính kèm config.py vào bundle):
    ```cmd
-   pyinstaller --onefile auto_cauca.py
+   pyinstaller --onefile --add-data "config.py;." auto_cauca.py
    ```
+   > ⚠️ **Lưu ý:** Lệnh trên bắt buộc phải có `--add-data "config.py;."` — nếu thiếu, file exe sẽ báo lỗi ngay khi chạy vì không tìm thấy `config.py`.
 3. Sau khi chạy xong, file `auto_cauca.exe` sẽ nằm trong thư mục `dist\`. Bạn chỉ cần nén file `auto_cauca.exe` đó lại và gửi cho bạn bè!
 
 ---
