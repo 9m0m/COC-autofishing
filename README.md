@@ -1,6 +1,6 @@
 # COC-autofishing
 
-Công cụ tự động câu cá cho game Clash of Critters trên các trình giả lập Android (BlueStacks 5, LDPlayer 9, NoxPlayer, MuMu Player, MEmu) sử dụng thị giác máy tính thời gian thực (Computer Vision 100+ FPS).
+Công cụ tự động câu cá cho sự kiện Câu cá trong game Clash of Critters trên các trình giả lập Android (BlueStacks 5, LDPlayer 9, NoxPlayer, MuMu Player, MEmu).
 
 ---
 
@@ -18,7 +18,7 @@ Nếu không muốn cài đặt Python hay thao tác dòng lệnh, bạn có th�
 
 ### Bước 1: Chuẩn bị giả lập và game
 1. Cài đặt độ phân giải giả lập về chế độ **Điện thoại (Portrait / 9:16)**, ví dụ `720x1280` hoặc `1080x1920`. DPI khuyến nghị: `240` hoặc `320`.
-2. Mở game Clash of Critters và di chuyển nhân vật đến vị trí hồ câu cá.
+2. Mở game Clash of Critters và vào giao diện sự kiện **Câu cá**.
 
 ### Bước 2: Chạy bot
 - **Nếu dùng file `.exe`:** Nhấp đúp vào file `auto_cauca.exe`.
@@ -27,7 +27,20 @@ Nếu không muốn cài đặt Python hay thao tác dòng lệnh, bạn có th�
 Bot sẽ tự động quét và kết nối với cửa sổ giả lập đang mở, tính toán phần viền/thanh công cụ và bắt đầu câu cá tự động.
 
 ### Bước 3: Dừng bot khi cần
-- Bất kỳ lúc nào muốn dừng, hãy **nhấn giữ phím `q`** trên bàn phím. Bot sẽ dừng an toàn và thông báo tổng số cá đã câu.
+- Nhấn giữ phím **`q`** trên bàn phím trong khoảng 1 giây (nhấn ở bất kỳ đâu trên màn hình, **không cần phải bấm chọn cửa sổ dòng lệnh**). Bot sẽ tự động dừng an toàn và thông báo tổng số cá đã câu.
+
+---
+
+## Cơ chế hoạt động
+
+Bot theo dõi màu sắc của nút câu cá ở góc dưới màn hình để tự động xử lý:
+
+- **Nút Xanh lá (Sẵn sàng):** Quăng cần xuống nước.
+- **Nút Xám (Đang thả mồi):** Bot giữ yên lặng chờ cá cắn, tuyệt đối không click nhầm làm giật cần hỏng mồi.
+- **Nút Tím (Cá cắn câu):** Giật cần ngay lập tức và bật chế độ quét thanh trượt minigame 100+ FPS. Khi phao đỏ chạy trúng dải vàng, bot nhấp tức thì để đạt nhịp Hoàn Hảo.
+- **Màn hình tối (Bảng nhận cá):** Tự động chạm nhận thưởng tại toạ độ an toàn (`Rel Y = 0.870`), tránh hoàn toàn nút X thoát sự kiện ở đáy màn hình.
+
+Nếu game bị giật lag hoặc kẹt bảng thông báo quá 2.5 giây, bot tự động chạm giải phóng màn hình để tiếp tục vòng câu mới.
 
 ---
 
@@ -52,19 +65,6 @@ python auto_cauca.py
 
 ---
 
-## Nguyên lý hoạt động
-
-Bot vận hành dựa trên máy trạng thái 4 pha (Button State Machine) kết hợp quét dải màu HSV và định vị phao:
-
-1. **Trên bờ (Nút xanh lá):** Bot bấm quăng cần câu xuống nước.
-2. **Dưới nước (Nút xám):** Cần đang thả chờ cá đớp. Bot giữ yên lặng tuyệt đối, không click nhầm làm giật cần hỏng mồi.
-3. **Cá cắn câu (Nút tím):** Bot giật cần lập tức và chuyển sang chế độ quét thanh trượt minigame tốc độ cao (100+ FPS). Phao đỏ chạm ô vàng sẽ bấm chuẩn xác nhịp Hoàn Hảo.
-4. **Nhận quà (Popup kết quả):** Bot tự động bấm nhận thưởng tại toạ độ an toàn (`Rel Y = 0.870`), hoàn toàn cách xa nút X thoát game ở đáy màn hình.
-
-Nếu game bị lag hoặc kẹt bảng thông báo quá 2.5 giây, bot có cơ chế tự giải cứu để tiếp tục vòng câu mới mà không cần can thiệp thủ công.
-
----
-
 ## Cấu trúc thư mục
 
 ```text
@@ -75,12 +75,5 @@ Nếu game bị lag hoặc kẹt bảng thông báo quá 2.5 giây, bot có cơ 
 ├── cai_dat.bat            # Script 1-click cài đặt thư viện tự động
 ├── run_auto.bat           # Script 1-click khởi động bot
 ├── kiem_tra_vi_tri.bat    # Script 1-click kiểm tra toạ độ
-├── HUONG_DAN.md           # Hướng dẫn chi tiết bằng tiếng Việt
-└── LICENSE                # Giấy phép mã nguồn mở MIT
+└── HUONG_DAN.md           # Hướng dẫn chi tiết bằng tiếng Việt
 ```
-
----
-
-## Giấy phép
-
-Dự án được phân phối theo giấy phép [MIT License](LICENSE).
