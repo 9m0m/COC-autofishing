@@ -1,0 +1,24 @@
+# Python cache & compiled files
+__pycache__/
+*.py[cod]
+*$py.class
+*.so
+
+# Environments
+venv/
+.venv/
+env/
+
+# PyInstaller build files
+build/
+dist/
+*.spec
+
+# Temporary test images & debug crops
+*.png
+!assets/*.png
+all_windows.txt
+
+# Editor / IDE
+.vscode/
+.idea/
