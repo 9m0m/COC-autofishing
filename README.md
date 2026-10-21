@@ -63,7 +63,7 @@ Bạn chỉ cần thực hiện đúng theo các bước đơn giản sau:
 
 ## Lưu ý về độ chính xác và liên hệ hỗ trợ
 
-- **Tỉ lệ chính xác:** Mặc dù đã được tối ưu kỹ, trong quá trình chạy thực tế (như khi máy bị tụt khung hình hoặc game giật lag đột ngột), tool vẫn có thể xảy ra trường hợp câu sai hoặc click hụt. Tuy nhiên tỉ lệ hụt là rất ít.
+- **Tỉ lệ chính xác:** Tool đã được thử nghiệm thực tế trong một thời gian, tuy nhiên vẫn không thể tránh khỏi một số sai sót nhỏ hoặc các trường hợp đặc biệt chưa từng gặp (cũng như khi máy tính bị tụt khung hình, giật lag đột ngột). Do đó, tool vẫn có thể đôi lúc câu sai hoặc click hụt, nhưng tỉ lệ hụt là rất ít.
 - **Liên hệ hỗ trợ:** Nếu bạn gặp lỗi hoặc có vấn đề gì trong quá trình sử dụng, vui lòng liên hệ qua Discord: **`@9m0m`**.
 
 ---
