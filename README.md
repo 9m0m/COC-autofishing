@@ -51,13 +51,20 @@ Bạn chỉ cần thực hiện đúng theo các bước đơn giản sau:
 
 ---
 
-## Các cơ chế tự động thông minh đã tích hợp
+## Các cơ chế đã tích hợp
 
-- **Tự động quăng cần:** Quét nút màu xanh lá cây để vung cần xuống nước.
-- **Canh cá cắn siêu nhạy:** Chuyển trạng thái giật cần ngay tức thì khi nút chuyển sang màu tím rực, loại bỏ hoàn toàn việc giật non làm mất mồi.
-- **Minigame thanh trượt tốc độ cao:** Quét thanh trượt liên tục (60-100 khung hình/giây), có cơ chế khóa bộ nhớ ô vàng và quét va chạm liên tục giúp bắt chuẩn 100% kể cả ô vàng siêu mảnh (5-8px) của cá hiếm.
-- **Tự động nhận thưởng:** Tự đóng thẻ bài kỷ lục cá và bấm nút "Nhận Ngay" tại vị trí an toàn để chuyển sang vòng câu kế tiếp.
-- **Tự giải phóng chống kẹt:** Nếu gặp giật lag hoặc kẹt bảng thông báo quá 2.5 giây, bot sẽ tự bấm giải phóng để tiếp tục chu trình.
+- **Quăng cần tự động:** Quét nút màu xanh lá cây để thả cần xuống nước.
+- **Canh cá cắn:** Giật cần ngay khi nút chuyển sang màu tím, hạn chế giật non làm mất mồi.
+- **Xử lý thanh trượt minigame:** Quét thanh trượt liên tục, tự động ghi nhớ vị trí ô vàng và tính toán va chạm theo vệt di chuyển của phao để hạn chế tối đa việc lướt qua ô vàng nhỏ.
+- **Tự động nhận thưởng:** Tự bấm đóng thẻ bài kỷ lục cá và bấm nút "Nhận Ngay" để chuyển sang lượt câu tiếp theo.
+- **Tự giải phóng khi kẹt:** Nếu gặp tình trạng giật lag hoặc kẹt bảng thông báo quá 2.5 giây, bot sẽ tự bấm giải phóng để tiếp tục chu trình.
+
+---
+
+## Lưu ý về độ chính xác và liên hệ hỗ trợ
+
+- **Tỉ lệ chính xác:** Mặc dù đã được tối ưu kỹ, trong quá trình chạy thực tế (như khi máy bị tụt khung hình hoặc game giật lag đột ngột), tool vẫn có thể xảy ra trường hợp câu sai hoặc click hụt. Tuy nhiên tỉ lệ hụt là rất ít.
+- **Liên hệ hỗ trợ:** Nếu bạn gặp lỗi hoặc có vấn đề gì trong quá trình sử dụng, vui lòng liên hệ qua Discord: **`@9m0m`**.
 
 ---
 
