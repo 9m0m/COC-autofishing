@@ -516,9 +516,8 @@ def main():
                 target_yellow = None
                 yellow_last_seen = 0.0
 
-                # Tracking phao de do van toc va don dau khi ca chay nhanh
-                prev_bobber_x = None
-                prev_bobber_time = 0.0
+                # Khoa tranh click trung lap trong cung 1 luot phao di qua o vang
+                tapped_in_current_pass = False
 
                 while True:
                     if _stop_event.is_set():
@@ -571,37 +570,21 @@ def main():
                             continue
 
                     if bobber_x is not None:
-                        # Tinh van toc phao (px/giay)
-                        vx = 0.0
-                        if prev_bobber_x is not None and prev_bobber_time > 0:
-                            dt = cur_t - prev_bobber_time
-                            if 0.005 < dt < 0.2:
-                                vx = (bobber_x - prev_bobber_x) / dt
-
-                        prev_bobber_x = bobber_x
-                        prev_bobber_time = cur_t
-
                         ystart, yend = yellow_range
                         y_width = yend - ystart
 
-                        # Don dau 30ms truoc khi lenh click truyen toi game
-                        predicted_x = bobber_x + vx * 0.030
-
-                        # Kiem tra ca vi tri hien tai va vi tri don dau
-                        hit = False
-                        if (ystart - 2) <= predicted_x <= (yend + 2):
-                            hit = True
-                        elif (ystart - 2) <= bobber_x <= (yend + 2):
-                            hit = True
-
-                        if hit and (cur_t - last_hit_time > 0.18):
-                            fast_tap(btn_screen_x, btn_screen_y)
-                            hit_count += 1
-                            log(f"  -> [HOAN HAO #{hit_count}] Phao ({bobber_x} -> {int(predicted_x)}) trung [{ystart}, {yend}] (Rong: {y_width}px)")
-                            last_hit_time = cur_t
-                            # Sau khi bam trúng, reset target_yellow de cho o vang nhip moi
-                            target_yellow = None
-                            prev_bobber_x = None
+                        # Chi bam khi phao DA THUC SU NAM TRONG o vang [ystart, yend]
+                        # Tuyet doi khong bam don dau som ra ngoai de tranh bi tru thoi gian
+                        if ystart <= bobber_x <= yend:
+                            if not tapped_in_current_pass and (cur_t - last_hit_time > 0.30):
+                                fast_tap(btn_screen_x, btn_screen_y)
+                                hit_count += 1
+                                log(f"  -> [HOAN HAO #{hit_count}] Phao ({bobber_x}) trung o vang [{ystart}, {yend}] (Rong: {y_width}px)")
+                                last_hit_time = cur_t
+                                tapped_in_current_pass = True
+                                target_yellow = None
+                        elif (bobber_x < ystart) or (bobber_x > yend):
+                            tapped_in_current_pass = False
 
                 # Thoat minigame som do ESC
                 if _stop_event.is_set():
