@@ -92,6 +92,19 @@ def get_game_viewport(hwnd: int, win_title: str) -> Tuple[int, int, int, int]:
     sidebar & title bar. Dùng cùng logic với auto_cauca.py để đảm bảo
     preview khớp 100% với vị trí bot thực tế.
     """
+    if "ldplayer" in win_title.lower():
+        try:
+            render_hwnd = user32.FindWindowExW(hwnd, None, "RenderWindow", None)
+            if render_hwnd:
+                rect = wintypes.RECT()
+                user32.GetWindowRect(render_hwnd, ctypes.byref(rect))
+                rw = rect.right - rect.left
+                rh = rect.bottom - rect.top
+                if rw > 200 and rh > 350:
+                    return rect.left, rect.top, rw, rh
+        except Exception:
+            pass
+
     left, top, w, h = get_window_rect(hwnd)
     title_bar_px, sidebar_left_px, sidebar_right_px = 0, 0, 0
     title_lower = win_title.lower()

@@ -143,7 +143,22 @@ def get_game_viewport(hwnd: int, win_title: str) -> Tuple[int, int, int, int]:
     """
     Tinh toa do vung hien thi game thuc te (game_left, game_top, game_width, game_height)
     sau khi tru thanh tieu de va thanh cong cu cua tung gia lap.
+    Uu tien tu dong lay RenderWindow cua LDPlayer de dat do chinh xac 100%.
     """
+    # Uu tien tim cua so con RenderWindow cua LDPlayer
+    if "ldplayer" in win_title.lower():
+        try:
+            render_hwnd = user32.FindWindowExW(hwnd, None, "RenderWindow", None)
+            if render_hwnd:
+                rect = wintypes.RECT()
+                user32.GetWindowRect(render_hwnd, ctypes.byref(rect))
+                rw = rect.right - rect.left
+                rh = rect.bottom - rect.top
+                if rw > 200 and rh > 350:
+                    return rect.left, rect.top, rw, rh
+        except Exception:
+            pass
+
     left, top, w, h = get_window_rect(hwnd)
     title_bar_px, sidebar_left_px, sidebar_right_px = 0, 0, 0
     title_lower = win_title.lower()

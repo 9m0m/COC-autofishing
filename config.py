@@ -28,14 +28,14 @@ CLAIM_REL_Y: float = 0.870
 # 2. BÙ SAI SỐ VIỀN CỬA SỔ THEO TỪNG GIẢ LẬP
 # ==============================================================================
 # Thông số bù trừ viền: (title_bar_px, sidebar_left_px, sidebar_right_px)
-# Đo đạc trên tỷ lệ dọc (Portrait 9:16) của từng phần mềm giả lập.
+# Tất cả các giả lập Android phổ biến trên Windows đều đặt thanh công cụ ở bên PHẢI (bên trái = 0px).
 EMULATOR_VIEWPORT_OFFSETS: dict = {
     "bluestacks": (32, 0, 50),   # BlueStacks 5: thanh công cụ nằm bên phải ~50px
     "app player": (32, 0, 50),   # BlueStacks App Player
-    "ldplayer":   (30, 55, 0),   # LDPlayer 9: thanh điều khiển bên trái ~55px
-    "nox":        (30, 65, 0),   # NoxPlayer: thanh điều khiển bên trái ~65px
-    "mumu":       (28, 0,  0),   # MuMu Player: không có sidebar
-    "memu":       (30, 55, 0),   # MEmu: thanh điều khiển bên trái ~55px
+    "ldplayer":   (34, 0, 44),   # LDPlayer 9: thanh công cụ nằm bên phải ~44px
+    "nox":        (32, 0, 46),   # NoxPlayer: thanh công cụ nằm bên phải ~46px
+    "mumu":       (30, 0,  0),   # MuMu Player: không có sidebar cố định
+    "memu":       (32, 0, 44),   # MEmu: thanh công cụ nằm bên phải ~44px
 }
 
 # ==============================================================================
