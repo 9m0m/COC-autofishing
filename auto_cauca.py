@@ -271,21 +271,22 @@ def detect_yellow_and_bobber(roi_img: np.ndarray) -> Tuple[Optional[Tuple[int, i
     - Bo qua cac vien mep ngoai cung de tranh nhan nham text / UI ngoai thanh truot.
     """
     hsv = cv2.cvtColor(roi_img, cv2.COLOR_BGR2HSV)
-    kernel = np.ones((3, 3), np.uint8)
+    kernel_yellow = np.ones((3, 1), np.uint8)
+    kernel_red = np.ones((3, 3), np.uint8)
     rh, rw = roi_img.shape[:2]
 
-    # 1. Quet o vang muc tieu
+    # 1. Quet o vang muc tieu (Dung kernel doc 3x1 de giu tron ven o vang sieu hep 2-5px cua ca xin)
     lower_yellow = np.array(config.HSV_YELLOW_LOWER, dtype=np.uint8)
     upper_yellow = np.array(config.HSV_YELLOW_UPPER, dtype=np.uint8)
     yellow_mask = cv2.inRange(hsv, lower_yellow, upper_yellow)
-    clean_yellow = cv2.morphologyEx(yellow_mask, cv2.MORPH_OPEN, kernel)
+    clean_yellow = cv2.morphologyEx(yellow_mask, cv2.MORPH_OPEN, kernel_yellow)
 
     yellow_range = None
     contours, _ = cv2.findContours(clean_yellow, cv2.RETR_EXTERNAL, cv2.CHAIN_APPROX_SIMPLE)
     valid_yellows = []
     for c in contours:
         area = cv2.contourArea(c)
-        if area >= 10:  # Nguong nho de khong bo sot o vang hep khi gap ca xin
+        if area >= 8:  # Nguong sieu nhay de khong bo sot o vang hep khi gap ca hiem / ca ky luc
             x, y, w, h = cv2.boundingRect(c)
             # Loai bo cac contour sat mep tren/duoi do lem text hoac icon ngoai roi vao
             if y <= 2 and h <= 12:
@@ -312,7 +313,7 @@ def detect_yellow_and_bobber(roi_img: np.ndarray) -> Tuple[Optional[Tuple[int, i
     upper_red2 = np.array(config.HSV_RED_UPPER2, dtype=np.uint8)
 
     red_mask = cv2.inRange(hsv, lower_red1, upper_red1) | cv2.inRange(hsv, lower_red2, upper_red2)
-    clean_red = cv2.morphologyEx(red_mask, cv2.MORPH_OPEN, kernel)
+    clean_red = cv2.morphologyEx(red_mask, cv2.MORPH_OPEN, kernel_red)
 
     bobber_x = None
     r_contours, _ = cv2.findContours(clean_red, cv2.RETR_EXTERNAL, cv2.CHAIN_APPROX_SIMPLE)
@@ -341,7 +342,7 @@ def detect_yellow_and_bobber(roi_img: np.ndarray) -> Tuple[Optional[Tuple[int, i
 def main():
     disable_quickedit()
     print("=" * 50)
-    print("   COC-AUTOFISHING V12.2")
+    print("   COC-AUTOFISHING V12.3")
     print("=" * 50)
     print("Ho tro: BlueStacks 5, LDPlayer 9, Nox, MuMu, MEmu")
     print("[PHIM TAT] Q = BAT AUTO | ESC = DUNG AUTO")
@@ -544,8 +545,9 @@ def main():
                 minigame_start = time.time()
                 last_bobber_seen = time.time()
                 last_claim_check = 0.0
+                prev_bobber_x = None
 
-                # Bo nho o vang (tranh mat dau khi phao de len che khuat)
+                # Bo nho o vang (Khoa cung do rong lon nhat, tranh mat dau khi phao de len che khuat)
                 target_yellow = None
                 yellow_last_seen = 0.0
 
@@ -566,7 +568,7 @@ def main():
 
                     s_bgr = safe_grab(sct, slider_box)
                     if s_bgr is None:
-                        time.sleep(0.015)
+                        time.sleep(0.01)
                         continue
 
                     yellow_range, bobber_x = detect_yellow_and_bobber(s_bgr)
@@ -598,13 +600,25 @@ def main():
                         state = "CLAIM_REWARD"
                         break
 
-                    # Cap nhat bo nho o vang khi nhan dien ro rang
+                    # 3. Cap nhat va duy tri bo nho o vang (Khong bao gio lam teo nho o vang khi phao che de len)
                     if yellow_range is not None:
-                        target_yellow = yellow_range
+                        new_start, new_end = yellow_range
+                        if target_yellow is None:
+                            target_yellow = yellow_range
+                        else:
+                            old_start, old_end = target_yellow
+                            old_center = (old_start + old_end) / 2
+                            new_center = (new_start + new_end) / 2
+                            # Neu o vang moi phat hien nam sat vi tri cu: Hop nhat giu do rong lon nhat!
+                            if abs(new_center - old_center) < 35:
+                                target_yellow = (min(old_start, new_start), max(old_end, new_end))
+                            else:
+                                # O vang da thuc su doi cho sang vi tri khac tren thanh ray (sau khi Hoan Hao)
+                                target_yellow = yellow_range
                         yellow_last_seen = cur_t
                         no_slider_since = 0.0
-                    elif target_yellow is not None and (cur_t - yellow_last_seen < 1.0):
-                        # Phao dang de len o vang lam che khuat -> Dung lai vi tri da nho
+                    elif target_yellow is not None and (cur_t - yellow_last_seen < 1.5):
+                        # Phao dang de len 100% che khuat o vang -> Su dung vi tri da khoa
                         yellow_range = target_yellow
                         no_slider_since = 0.0
 
@@ -618,27 +632,40 @@ def main():
                             log(f"[3/4] Keo ca hoan tat ({hit_count} Hoan Hao). Nhan thuong...")
                             state = "CLAIM_REWARD"
                             break
-                        time.sleep(0.015)
                         continue
                     else:
                         no_slider_since = 0.0
 
-                    if bobber_x is not None:
+                    if bobber_x is not None and yellow_range is not None:
                         ystart, yend = yellow_range
                         y_width = yend - ystart
 
-                        # Chi bam khi phao DA THUC SU NAM TRONG o vang [ystart, yend]
-                        # Tuyet doi khong bam don dau som ra ngoai de tranh bi tru thoi gian
-                        if ystart <= bobber_x <= yend:
-                            if not tapped_in_current_pass and (cur_t - last_hit_time > 0.30):
+                        # Kiem tra truc tiep: Phao nam trong o vang
+                        inside = (ystart <= bobber_x <= yend)
+
+                        # Continuous Sweep: Quet doan duong phao di chuyen giua 2 frame
+                        # Neu phao di chuyen nhanh nhay qua o vang hep (5-10px) giua 2 frame van bat trung 100%
+                        if prev_bobber_x is not None:
+                            move_min = min(prev_bobber_x, bobber_x)
+                            move_max = max(prev_bobber_x, bobber_x)
+                            crossed = max(move_min, ystart) <= min(move_max, yend)
+                        else:
+                            crossed = False
+
+                        if inside or crossed:
+                            if not tapped_in_current_pass and (cur_t - last_hit_time > 0.28):
                                 fast_tap(btn_screen_x, btn_screen_y)
                                 hit_count += 1
                                 log(f"  -> [HOAN HAO #{hit_count}] Phao ({bobber_x}) trung o vang [{ystart}, {yend}] (Rong: {y_width}px)")
                                 last_hit_time = cur_t
                                 tapped_in_current_pass = True
                                 target_yellow = None
-                        elif (bobber_x < ystart) or (bobber_x > yend):
+                                prev_bobber_x = None
+                        elif (bobber_x < ystart - 6) or (bobber_x > yend + 6):
+                            # Phao da di han ra ngoai bien do vang -> Mo khoa cho luot tiep theo
                             tapped_in_current_pass = False
+
+                        prev_bobber_x = bobber_x
 
                 # Thoat minigame som do ESC
                 if _stop_event.is_set():
