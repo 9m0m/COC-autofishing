@@ -78,6 +78,15 @@ def log(msg: str) -> None:
     print(f"[{timestamp}] {msg}", flush=True)
 
 
+def safe_unhook_hotkeys() -> None:
+    """Go bo an toan tat ca hotkey, tranh loi noi bo cua thu vien keyboard tren Windows khi chua co hotkey nao."""
+    try:
+        if hasattr(keyboard, "_listener") and hasattr(keyboard._listener, "blocking_hotkeys"):
+            keyboard.remove_all_hotkeys()
+    except Exception:
+        pass
+
+
 def sleep_check(seconds: float) -> bool:
     """
     Sleep trong `seconds` giay.
@@ -422,7 +431,7 @@ def main():
             # =========================================================
             if _stop_event.is_set():
                 # Go bo hotkey esc de tra lai phim ESC 100% cho cac ung dung khac tren Windows
-                keyboard.remove_all_hotkeys()
+                safe_unhook_hotkeys()
                 _stop_event.clear()
 
                 # Doi nguoi dung nha cac phim dang giu
@@ -753,7 +762,7 @@ def main():
         log(f"\n[LOI] {type(e).__name__}: {e}")
         log("[GOI Y] Hay bao loi nay cho tac gia de duoc ho tro.")
     finally:
-        keyboard.remove_all_hotkeys()
+        safe_unhook_hotkeys()
         log(f"[TONG KET] Tong so ca: {fish_count}")
         log("[KET THUC] Bot da dung.")
         if getattr(sys, "frozen", False):
