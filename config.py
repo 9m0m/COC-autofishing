@@ -13,11 +13,11 @@ Cấu hình toạ độ và thông số nhận diện cho Auto Câu Cá Đa Gi�
 BUTTON_REL_X: float = 0.406
 BUTTON_REL_Y: float = 0.814
 
-# Vùng thanh trượt mini-game kéo cá
-SLIDER_REL_X_MIN: float = 0.200
-SLIDER_REL_X_MAX: float = 0.710
-SLIDER_REL_Y_MIN: float = 0.660
-SLIDER_REL_Y_MAX: float = 0.710
+# Vùng thanh trượt mini-game kéo cá (Bao trọn 100% thanh trượt, đường ray và phao câu)
+SLIDER_REL_X_MIN: float = 0.165
+SLIDER_REL_X_MAX: float = 0.835
+SLIDER_REL_Y_MIN: float = 0.605
+SLIDER_REL_Y_MAX: float = 0.730
 
 # Vị trí nút "Nhận Ngay" & vùng an toàn đóng popup
 # (Nằm ngoài popup kỷ lục, trúng nút nhận thưởng cá thường, tuyệt đối không chạm nút X)

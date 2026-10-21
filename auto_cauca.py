@@ -189,11 +189,12 @@ def touch_tap(x: int, y: int, desc: str = "") -> None:
     pyautogui.mouseUp(x, y)
 
 
-def rapid_tap(x: int, y: int) -> None:
-    """Bam sieu toc phan xa mili-giay cho thanh truot va giat can."""
-    pyautogui.mouseDown(x, y)
-    time.sleep(0.04)
-    pyautogui.mouseUp(x, y)
+def fast_tap(x: int, y: int) -> None:
+    """Bam sieu toc mili-giay qua Win32 mouse_event truc tiep, khong do tre."""
+    user32.SetCursorPos(x, y)
+    user32.mouse_event(0x0002, 0, 0, 0, 0)  # MOUSEEVENTF_LEFTDOWN
+    time.sleep(0.02)
+    user32.mouse_event(0x0004, 0, 0, 0, 0)  # MOUSEEVENTF_LEFTUP
 
 
 def analyze_button_colors(btn_bgr: np.ndarray) -> Tuple[int, int, int]:
@@ -231,39 +232,68 @@ def analyze_button_colors(btn_bgr: np.ndarray) -> Tuple[int, int, int]:
 
 def detect_yellow_and_bobber(roi_img: np.ndarray) -> Tuple[Optional[Tuple[int, int]], Optional[int]]:
     """
-    Quet o vang muc tieu va phao do tren thanh truot mini-game.
-    Loai tru truong hop chu 'Hoan hao!' loe sang lam mo rong dai vang qua muc (> 130px).
+    Quet o vang muc tieu va phao do tren thanh truot mini-game bang contour & morphology.
+    - Ho tro ca o vang sieu hep cua ca quy hiem / ca ky luc.
+    - Tu dong ghep noi neu phao do che doi o vang o giua.
+    - Loai bo hieu ung chu 'Hoan hao!' loe sang (> 130px).
     """
     hsv = cv2.cvtColor(roi_img, cv2.COLOR_BGR2HSV)
+    kernel = np.ones((3, 3), np.uint8)
 
+    # 1. Quet o vang muc tieu
     lower_yellow = np.array(config.HSV_YELLOW_LOWER, dtype=np.uint8)
     upper_yellow = np.array(config.HSV_YELLOW_UPPER, dtype=np.uint8)
     yellow_mask = cv2.inRange(hsv, lower_yellow, upper_yellow)
-    y_points = np.where(yellow_mask > 0)[1]
+    clean_yellow = cv2.morphologyEx(yellow_mask, cv2.MORPH_OPEN, kernel)
 
-    if len(y_points) < 5:
-        return None, None
+    yellow_range = None
+    contours, _ = cv2.findContours(clean_yellow, cv2.RETR_EXTERNAL, cv2.CHAIN_APPROX_SIMPLE)
+    valid_yellows = []
+    for c in contours:
+        area = cv2.contourArea(c)
+        if area >= 10:  # Nguong nho de khong bo sot o vang hep khi gap ca xin
+            x, y, w, h = cv2.boundingRect(c)
+            if w <= config.YELLOW_MAX_WIDTH:
+                valid_yellows.append((x, x + w, area))
 
-    yellow_start = int(np.percentile(y_points, 5))
-    yellow_end = int(np.percentile(y_points, 95))
-    yellow_width = yellow_end - yellow_start
+    if valid_yellows:
+        # Neu phao che o giua chia thanh 2 manh vang, ghep noi lai bien do thuc
+        min_x = min(item[0] for item in valid_yellows)
+        max_x = max(item[1] for item in valid_yellows)
+        if (max_x - min_x) <= config.YELLOW_MAX_WIDTH:
+            yellow_range = (min_x, max_x)
+        else:
+            valid_yellows.sort(key=lambda item: item[2], reverse=True)
+            yellow_range = (valid_yellows[0][0], valid_yellows[0][1])
 
-    if yellow_width > config.YELLOW_MAX_WIDTH:
-        return None, None
-
+    # 2. Quet phao do (bobber)
     lower_red1 = np.array(config.HSV_RED_LOWER1, dtype=np.uint8)
     upper_red1 = np.array(config.HSV_RED_UPPER1, dtype=np.uint8)
     lower_red2 = np.array(config.HSV_RED_LOWER2, dtype=np.uint8)
     upper_red2 = np.array(config.HSV_RED_UPPER2, dtype=np.uint8)
 
     red_mask = cv2.inRange(hsv, lower_red1, upper_red1) | cv2.inRange(hsv, lower_red2, upper_red2)
-    red_points = np.where(red_mask > 0)[1]
+    clean_red = cv2.morphologyEx(red_mask, cv2.MORPH_OPEN, kernel)
 
-    if len(red_points) == 0:
-        return (yellow_start, yellow_end), None
+    bobber_x = None
+    r_contours, _ = cv2.findContours(clean_red, cv2.RETR_EXTERNAL, cv2.CHAIN_APPROX_SIMPLE)
+    valid_reds = []
+    for c in r_contours:
+        area = cv2.contourArea(c)
+        if area >= 12:
+            M = cv2.moments(c)
+            if M["m00"] > 0:
+                cx = int(M["m10"] / M["m00"])
+            else:
+                rx, _, rw, _ = cv2.boundingRect(c)
+                cx = rx + rw // 2
+            valid_reds.append((cx, area))
 
-    bobber_x = int(np.median(red_points))
-    return (yellow_start, yellow_end), bobber_x
+    if valid_reds:
+        valid_reds.sort(key=lambda item: item[1], reverse=True)
+        bobber_x = valid_reds[0][0]
+
+    return yellow_range, bobber_x
 
 
 def main():
@@ -380,7 +410,7 @@ def main():
 
                 if purple_px > config.PURPLE_PX_THRESHOLD:
                     log(f"[PHUC HOI] Ca dang can ({purple_px}px tim) -> GIAT CAN NGAY!")
-                    rapid_tap(btn_screen_x, btn_screen_y)
+                    fast_tap(btn_screen_x, btn_screen_y)
                     if sleep_check(0.35):
                         break
                     state = "MINIGAME_SLIDER"
@@ -449,7 +479,7 @@ def main():
 
                 if purple_px > config.PURPLE_PX_THRESHOLD:
                     log(f"[2/4] CA CAN! ({purple_px}px tim) -> GIAT CAN!")
-                    rapid_tap(btn_screen_x, btn_screen_y)
+                    fast_tap(btn_screen_x, btn_screen_y)
                     if sleep_check(0.35):
                         break
                     state = "MINIGAME_SLIDER"
@@ -466,6 +496,14 @@ def main():
                 last_hit_time = 0.0
                 hit_count = 0
                 minigame_start = time.time()
+
+                # Bo nho o vang (tranh mat dau khi phao de len che khuat)
+                target_yellow = None
+                yellow_last_seen = 0.0
+
+                # Tracking phao de do van toc va don dau khi ca chay nhanh
+                prev_bobber_x = None
+                prev_bobber_time = 0.0
 
                 while True:
                     if _stop_event.is_set():
@@ -485,6 +523,16 @@ def main():
                         continue
 
                     yellow_range, bobber_x = detect_yellow_and_bobber(s_bgr)
+
+                    # Cap nhat bo nho o vang khi nhan dien ro rang
+                    if yellow_range is not None:
+                        target_yellow = yellow_range
+                        yellow_last_seen = cur_t
+                        no_slider_since = 0.0
+                    elif target_yellow is not None and (cur_t - yellow_last_seen < 1.2):
+                        # Phao dang de len o vang lam che khuat -> Dung lai vi tri da nho
+                        yellow_range = target_yellow
+                        no_slider_since = 0.0
 
                     if yellow_range is None:
                         b_bgr = safe_grab(sct, btn_box)
@@ -506,17 +554,39 @@ def main():
                                 break
                             time.sleep(0.015)
                             continue
-                    else:
-                        no_slider_since = 0.0
 
                     if bobber_x is not None:
+                        # Tinh van toc phao (px/giay)
+                        vx = 0.0
+                        if prev_bobber_x is not None and prev_bobber_time > 0:
+                            dt = cur_t - prev_bobber_time
+                            if 0.005 < dt < 0.2:
+                                vx = (bobber_x - prev_bobber_x) / dt
+
+                        prev_bobber_x = bobber_x
+                        prev_bobber_time = cur_t
+
                         ystart, yend = yellow_range
-                        if (ystart - 5) <= bobber_x <= (yend + 5):
-                            if cur_t - last_hit_time > 0.16:
-                                rapid_tap(btn_screen_x, btn_screen_y)
-                                hit_count += 1
-                                log(f"  -> [HOAN HAO #{hit_count}] Phao ({bobber_x}) trung o vang [{ystart}, {yend}]")
-                                last_hit_time = cur_t
+                        y_width = yend - ystart
+
+                        # Don dau 30ms truoc khi lenh click truyen toi game
+                        predicted_x = bobber_x + vx * 0.030
+
+                        # Kiem tra ca vi tri hien tai va vi tri don dau
+                        hit = False
+                        if (ystart - 2) <= predicted_x <= (yend + 2):
+                            hit = True
+                        elif (ystart - 2) <= bobber_x <= (yend + 2):
+                            hit = True
+
+                        if hit and (cur_t - last_hit_time > 0.18):
+                            fast_tap(btn_screen_x, btn_screen_y)
+                            hit_count += 1
+                            log(f"  -> [HOAN HAO #{hit_count}] Phao ({bobber_x} -> {int(predicted_x)}) trung [{ystart}, {yend}] (Rong: {y_width}px)")
+                            last_hit_time = cur_t
+                            # Sau khi bam trúng, reset target_yellow de cho o vang nhip moi
+                            target_yellow = None
+                            prev_bobber_x = None
 
                 # Thoat minigame som do ESC
                 if _stop_event.is_set():
