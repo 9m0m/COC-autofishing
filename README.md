@@ -8,7 +8,8 @@ Công cụ tự động câu cá chính xác cao cho sự kiện Câu cá trong 
 
 - **Phương thức hoạt động**: Bot mô phỏng và điều khiển trực tiếp con trỏ chuột của máy tính để thao tác vào màn hình giả lập theo thời gian thực.
 - **Không sử dụng chuột làm việc khác khi bot đang chạy**: Trong suốt quá trình bot đang câu cá, bạn **không được sử dụng chuột** của máy tính đó (không lướt web, không làm việc hay chơi game khác trên cùng máy). Nếu bạn di chuyển chuột thủ công, thao tác bấm của bot sẽ bị lệch tâm và dẫn đến câu trượt.
-- **Dừng khẩn cấp**: Bất kỳ lúc nào bạn cần lấy lại chuột để làm việc, chỉ cần nhấn phím **ESC** trên bàn phím để dừng bot ngay lập tức.
+- **Tạm dừng và Tiếp tục (Pause & Resume)**: Bất kỳ lúc nào bạn cần dùng chuột làm việc khác, chỉ cần nhấn phím **ESC** để tạm dừng bot ngay lập tức. Khi làm việc xong, chỉ cần nhấn phím **Q** (hoặc **Space**) để bot tiếp tục câu cá tự động mà không cần phải mở lại tool.
+- **Thoát chương trình**: Khi đang ở trạng thái tạm dừng, nhấn phím **ESC** một lần nữa để thoát hẳn tool.
 
 ---
 
@@ -46,8 +47,9 @@ Bạn chỉ cần thực hiện đúng theo các bước đơn giản sau:
 
 ### Bước 5: Điều khiển Auto bằng bàn phím
 
-- **Bắt đầu câu:** Nhấn phím **`Q`** (hoặc phím **Space**) trên bàn phím. Bot sẽ bắt đầu chiếm quyền điều khiển chuột để quăng cần, canh giật nút tím, bắt minigame thanh trượt và nhận cá tự động.
-- **Tạm dừng / Dừng hẳn:** Nhấn phím **`ESC`** trên bàn phím bất kỳ lúc nào. Bot sẽ lập tức dừng lại và nhả quyền điều khiển chuột để bạn sử dụng máy tính bình thường.
+- **Bắt đầu câu / Tiếp tục câu (Resume):** Nhấn phím **`Q`** (hoặc phím **Space**) trên bàn phím. Bot sẽ chiếm quyền điều khiển chuột để quăng cần, canh giật nút tím, bắt minigame thanh trượt và nhận cá tự động.
+- **Tạm dừng (Pause):** Nhấn phím **`ESC`** trên bàn phím bất kỳ lúc nào. Bot sẽ lập tức tạm dừng và nhả chuột để bạn sử dụng máy tính bình thường (số cá đã câu vẫn được lưu lại).
+- **Thoát hẳn:** Khi đang ở trạng thái tạm dừng, nhấn phím **`ESC`** lần nữa để đóng chương trình.
 
 ---
 
@@ -78,4 +80,4 @@ Bạn chỉ cần thực hiện đúng theo các bước đơn giản sau:
    - Kiểm tra lại cài đặt độ phân giải giả lập ở Bước 1. Phải chắc chắn giả lập đang ở chế độ Điện thoại (khổ dọc 9:16 như `720x1280` hoặc `1080x1920`).
 
 3. **Tôi muốn làm việc khác trên máy tính trong lúc auto câu thì sao?**
-   - Do bot sử dụng trực tiếp chuột của máy tính để bấm, bạn không thể dùng chuột làm việc khác trên cùng máy tính đó trong lúc bot đang chạy. Hãy nhấn phím `ESC` để dừng bot khi bạn cần dùng chuột.
+   - Chỉ cần nhấn phím **`ESC`** để bot tạm dừng và nhả chuột cho bạn. Khi bạn làm việc xong, nhấn lại phím **`Q`** (hoặc **`Space`**) là bot sẽ tự động nhận diện lại màn hình và tiếp tục câu cá, không cần phải tắt mở lại phần mềm.

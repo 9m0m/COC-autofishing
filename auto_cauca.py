@@ -10,7 +10,7 @@ Co che dieu khien:
    - Toi / Popup: Nhan thuong tai toa do an toan (Rel Y = 0.870).
 2. Quet minigame thanh truot toc do cao (100+ FPS) bang MSS + OpenCV.
 3. Tu dong bu tru vien cua so va thanh cong cu theo tung gia lap.
-4. Nhan Q de BAT auto | Nhan ESC de DUNG auto ngay lap tuc.
+4. Nhan Q de BAT / RESUME | Nhan ESC de TAM DUNG (nhan tiep de THOAT).
 """
 
 import sys
@@ -342,10 +342,10 @@ def detect_yellow_and_bobber(roi_img: np.ndarray) -> Tuple[Optional[Tuple[int, i
 def main():
     disable_quickedit()
     print("=" * 50)
-    print("   COC-AUTOFISHING V12.3")
+    print("   COC-AUTOFISHING V12.4")
     print("=" * 50)
     print("Ho tro: BlueStacks 5, LDPlayer 9, Nox, MuMu, MEmu")
-    print("[PHIM TAT] Q = BAT AUTO | ESC = DUNG AUTO")
+    print("[PHIM TAT] Q = BAT / RESUME | ESC = TAM DUNG (Nhan ESC lan 2 de Thoat)")
     print("-" * 50)
 
     # Tim gia lap
@@ -412,42 +412,67 @@ def main():
     last_heartbeat = 0
     wait_ready_start = time.time()
 
-    # Dam bao Q va Space da duoc nha truoc khi vao che do cho
-    while keyboard.is_pressed("q") or keyboard.is_pressed("space"):
-        time.sleep(0.05)
-
-    print("-" * 50)
-    log("[CHO LENH] Mo su kien Cau ca tren gia lap.")
-    log("[CHO LENH] Nhan Q (hoac Space) de bat dau...")
-    print("-" * 50)
-
-    # Cho nguoi dung nhan Q hoac Space de bat dau
-    while True:
-        if keyboard.is_pressed("q") or keyboard.is_pressed("space"):
-            break
-        if keyboard.is_pressed("esc"):
-            log("[THOAT] Nguoi dung nhan ESC.")
-            return
-        time.sleep(0.05)
-
-    # Debounce: doi nha phim hoan toan truoc khi vao vong lap chinh
-    while keyboard.is_pressed("q") or keyboard.is_pressed("space"):
-        time.sleep(0.05)
-    time.sleep(0.3)
-
-    # Dang ky ESC de dung bot ngay lap tuc (chay tren luong nen)
-    _stop_event.clear()
-    keyboard.add_hotkey("esc", _stop_event.set, suppress=True)
-
-    log("[KHOI DONG] Auto bat dau!")
-    log("Nhan ESC bat cu luc nao de dung.\n")
+    # Khoi tao trang thai: bat dau o che do cho lenh
+    _stop_event.set()
 
     try:
         while True:
-            # Kiem tra lenh dung tu ESC
+            # =========================================================
+            # XU LY TRANG THAI TAM DUNG / CHO LENH (PAUSED STATE)
+            # =========================================================
             if _stop_event.is_set():
-                log(f"\n[DUNG] Da dung auto.")
-                break
+                # Go bo hotkey esc de tra lai phim ESC 100% cho cac ung dung khac tren Windows
+                keyboard.remove_all_hotkeys()
+                _stop_event.clear()
+
+                # Doi nguoi dung nha cac phim dang giu
+                while keyboard.is_pressed("q") or keyboard.is_pressed("space") or keyboard.is_pressed("esc"):
+                    time.sleep(0.05)
+
+                if last_heartbeat == 0:
+                    print("-" * 50)
+                    log("[CHO LENH] Mo su kien Cau ca tren gia lap.")
+                    log("[CHO LENH] Nhan Q (hoac Space) de BAT DAU | Nhan ESC de THOAT...")
+                    print("-" * 50)
+                else:
+                    print("-" * 50)
+                    log("[TAM DUNG] Da tam dung auto. Chuot da duoc giai phong!")
+                    log(f"[TAM DUNG] Tong so ca da cau: {fish_count}")
+                    log("[CHO LENH] Nhan Q (hoac Space) de TIEP TUC (Resume)...")
+                    log("[CHO LENH] Nhan ESC de THOAT HAN tool...")
+                    print("-" * 50)
+
+                should_exit = False
+                while True:
+                    if keyboard.is_pressed("q") or keyboard.is_pressed("space"):
+                        break
+                    if keyboard.is_pressed("esc"):
+                        should_exit = True
+                        break
+                    time.sleep(0.05)
+
+                if should_exit:
+                    log("[THOAT] Nguoi dung nhan ESC de thoat.")
+                    break
+
+                # Debounce phim truoc khi vao lai vong lap
+                while keyboard.is_pressed("q") or keyboard.is_pressed("space"):
+                    time.sleep(0.05)
+                time.sleep(0.2)
+
+                # Dang ky lai hotkey ESC de bat tam dung khi dang chay
+                _stop_event.clear()
+                keyboard.add_hotkey("esc", _stop_event.set, suppress=True)
+
+                if last_heartbeat == 0:
+                    log("[KHOI DONG] Auto bat dau! Nhan ESC bat cu luc nao de TAM DUNG.\n")
+                else:
+                    log("[TIEP TUC] Auto tiep tuc hoat dong! Nhan ESC bat cu luc nao de TAM DUNG.\n")
+
+                state = "READY_TO_CAST"
+                wait_ready_start = time.time()
+                last_heartbeat = time.time()
+                continue
 
             now = time.time()
 
@@ -458,7 +483,7 @@ def main():
                 bgr = safe_grab(sct, btn_box)
                 if bgr is None:
                     if sleep_check(0.5):
-                        break
+                        continue
                     continue
                 green_px, grey_px, purple_px = analyze_button_colors(bgr)
 
@@ -466,7 +491,7 @@ def main():
                     log(f"[PHUC HOI] Ca dang can ({purple_px}px tim) -> GIAT CAN NGAY!")
                     fast_tap(btn_screen_x, btn_screen_y)
                     if sleep_check(0.35):
-                        break
+                        continue
                     state = "MINIGAME_SLIDER"
                     log("[3/4] Quet thanh truot...")
                     continue
@@ -481,10 +506,24 @@ def main():
                     log(f"[1/4] Tha can ({green_px}px xanh)...")
                     touch_tap(btn_screen_x, btn_screen_y, desc="Nut quang can")
                     if sleep_check(1.5):
-                        break
+                        continue
                     state = "WAITING_BITE"
                     last_heartbeat = time.time()
                     continue
+
+                # Kiem tra nhanh: Man hinh Nhan Ngay (phuc hoi khi resume ngay luc dang co nut Nhan Ngay)
+                claim_bgr = safe_grab(sct, claim_box)
+                if claim_bgr is not None:
+                    c_hsv = cv2.cvtColor(claim_bgr, cv2.COLOR_BGR2HSV)
+                    c_green = cv2.inRange(
+                        c_hsv,
+                        np.array(config.HSV_READY_GREEN_LOWER, dtype=np.uint8),
+                        np.array(config.HSV_READY_GREEN_UPPER, dtype=np.uint8),
+                    )
+                    if np.count_nonzero(c_green) > 300:
+                        log(f"[PHUC HOI] Phat hien nut Nhan Ngay ({np.count_nonzero(c_green)}px xanh). Tien hanh nhan thuong!")
+                        state = "CLAIM_REWARD"
+                        continue
 
                 if now - last_heartbeat > 1.2:
                     log(f"[Cho] Xanh: {green_px} | Xam: {grey_px} | Tim: {purple_px}")
@@ -496,11 +535,11 @@ def main():
                     time.sleep(0.3)
                     touch_tap(claim_screen_x, claim_screen_y, desc="Giai phong Nhan Ngay")
                     if sleep_check(0.8):
-                        break
+                        continue
                     wait_ready_start = time.time()
                 else:
                     if sleep_check(0.15):
-                        break
+                        continue
 
             # =========================================================
             # BUOC 2: CHO CA CAN CAU (WAITING_BITE)
@@ -509,7 +548,7 @@ def main():
                 bgr = safe_grab(sct, btn_box)
                 if bgr is None:
                     if sleep_check(0.5):
-                        break
+                        continue
                     continue
                 green_px, grey_px, purple_px = analyze_button_colors(bgr)
 
@@ -528,12 +567,12 @@ def main():
                     log(f"[2/4] CA CAN! ({purple_px}px tim) -> GIAT CAN!")
                     fast_tap(btn_screen_x, btn_screen_y)
                     if sleep_check(0.35):
-                        break
+                        continue
                     state = "MINIGAME_SLIDER"
                     log("[3/4] Quet thanh truot...")
                 else:
                     if sleep_check(0.015):
-                        break
+                        continue
 
             # =========================================================
             # BUOC 3: MINI-GAME THANH TRUOT (MINIGAME_SLIDER)
@@ -669,8 +708,7 @@ def main():
 
                 # Thoat minigame som do ESC
                 if _stop_event.is_set():
-                    log(f"\n[DUNG] Da dung auto.")
-                    break
+                    continue
 
             # =========================================================
             # BUOC 4: NHAN QUA / DONG POPUP (CLAIM_REWARD)
@@ -678,19 +716,19 @@ def main():
             elif state == "CLAIM_REWARD":
                 log("[4/4] Cho hoat anh ca (0.8s)...")
                 if sleep_check(0.8):
-                    break
+                    continue
 
                 # Nhip 1: Cham truc tiep vao tam the (Rel Y = 0.480) de dong the "Ky Luc Doi Moi", "Ca Moi"
                 touch_tap(card_screen_x, card_screen_y, desc="Dong the ky luc (Nhip 1)")
 
                 if sleep_check(0.4):
-                    break
+                    continue
 
                 # Nhip 2: Cham nut "Nhan Ngay" (Rel Y = 0.870) cua man hinh ca thuong
                 touch_tap(claim_screen_x, claim_screen_y, desc="Nhan Ngay (Nhip 2)")
 
                 if sleep_check(0.4):
-                    break
+                    continue
 
                 # Nhip 3: Xac nhan dong hoan toan popup ton du
                 touch_tap(claim_screen_x, claim_screen_y, desc="Xac nhan dong (Nhip 3)")
@@ -699,7 +737,7 @@ def main():
                 log(f"[4/4] Nhan thuong thanh cong! Ca thu: {fish_count}")
 
                 if sleep_check(0.6):
-                    break
+                    continue
 
                 state = "READY_TO_CAST"
                 wait_ready_start = time.time()
