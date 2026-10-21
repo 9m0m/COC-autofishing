@@ -246,15 +246,33 @@ def analyze_button_colors(btn_bgr: np.ndarray) -> Tuple[int, int, int]:
     return green_px, grey_px, purple_px
 
 
+def disable_quickedit():
+    """Vo hieu hoa che do QuickEdit cua Windows Console de tranh viec click chuot vao cmd lam treo chuong trinh."""
+    try:
+        import ctypes
+        from ctypes import wintypes
+        kernel32 = ctypes.windll.kernel32
+        h_stdin = kernel32.GetStdHandle(-10)  # STD_INPUT_HANDLE
+        mode = wintypes.DWORD()
+        if kernel32.GetConsoleMode(h_stdin, ctypes.byref(mode)):
+            ENABLE_QUICK_EDIT_MODE = 0x0040
+            ENABLE_EXTENDED_FLAGS = 0x0080
+            new_mode = (mode.value & ~ENABLE_QUICK_EDIT_MODE) | ENABLE_EXTENDED_FLAGS
+            kernel32.SetConsoleMode(h_stdin, new_mode)
+    except Exception:
+        pass
+
+
 def detect_yellow_and_bobber(roi_img: np.ndarray) -> Tuple[Optional[Tuple[int, int]], Optional[int]]:
     """
     Quet o vang muc tieu va phao do tren thanh truot mini-game bang contour & morphology.
     - Ho tro ca o vang sieu hep cua ca quy hiem / ca ky luc.
     - Tu dong ghep noi neu phao do che doi o vang o giua.
-    - Loai bo hieu ung chu 'Hoan hao!' loe sang (> 130px).
+    - Bo qua cac vien mep ngoai cung de tranh nhan nham text / UI ngoai thanh truot.
     """
     hsv = cv2.cvtColor(roi_img, cv2.COLOR_BGR2HSV)
     kernel = np.ones((3, 3), np.uint8)
+    rh, rw = roi_img.shape[:2]
 
     # 1. Quet o vang muc tieu
     lower_yellow = np.array(config.HSV_YELLOW_LOWER, dtype=np.uint8)
@@ -269,6 +287,11 @@ def detect_yellow_and_bobber(roi_img: np.ndarray) -> Tuple[Optional[Tuple[int, i
         area = cv2.contourArea(c)
         if area >= 10:  # Nguong nho de khong bo sot o vang hep khi gap ca xin
             x, y, w, h = cv2.boundingRect(c)
+            # Loai bo cac contour sat mep tren/duoi do lem text hoac icon ngoai roi vao
+            if y <= 2 and h <= 12:
+                continue
+            if y + h >= rh - 2 and h <= 12:
+                continue
             if w <= config.YELLOW_MAX_WIDTH:
                 valid_yellows.append((x, x + w, area))
 
@@ -297,12 +320,15 @@ def detect_yellow_and_bobber(roi_img: np.ndarray) -> Tuple[Optional[Tuple[int, i
     for c in r_contours:
         area = cv2.contourArea(c)
         if area >= 12:
+            x, y, w, h = cv2.boundingRect(c)
+            if y <= 2 and h <= 12:
+                continue
             M = cv2.moments(c)
             if M["m00"] > 0:
                 cx = int(M["m10"] / M["m00"])
             else:
-                rx, _, rw, _ = cv2.boundingRect(c)
-                cx = rx + rw // 2
+                rx, _, rw_c, _ = cv2.boundingRect(c)
+                cx = rx + rw_c // 2
             valid_reds.append((cx, area))
 
     if valid_reds:
@@ -313,8 +339,9 @@ def detect_yellow_and_bobber(roi_img: np.ndarray) -> Tuple[Optional[Tuple[int, i
 
 
 def main():
+    disable_quickedit()
     print("=" * 50)
-    print("   COC-AUTOFISHING V12.1")
+    print("   COC-AUTOFISHING V12.2")
     print("=" * 50)
     print("Ho tro: BlueStacks 5, LDPlayer 9, Nox, MuMu, MEmu")
     print("[PHIM TAT] Q = BAT AUTO | ESC = DUNG AUTO")
@@ -357,6 +384,13 @@ def main():
         "left": btn_screen_x - 30,
         "width": 60,
         "height": 60,
+    }
+
+    claim_box = {
+        "top": claim_screen_y - 15,
+        "left": claim_screen_x - 30,
+        "width": 60,
+        "height": 30,
     }
 
     slider_left = int(left + w * config.SLIDER_REL_X_MIN)
@@ -508,6 +542,8 @@ def main():
                 last_hit_time = 0.0
                 hit_count = 0
                 minigame_start = time.time()
+                last_bobber_seen = time.time()
+                last_claim_check = 0.0
 
                 # Bo nho o vang (tranh mat dau khi phao de len che khuat)
                 target_yellow = None
@@ -530,17 +566,44 @@ def main():
 
                     s_bgr = safe_grab(sct, slider_box)
                     if s_bgr is None:
-                        time.sleep(0.05)
+                        time.sleep(0.015)
                         continue
 
                     yellow_range, bobber_x = detect_yellow_and_bobber(s_bgr)
+
+                    # 1. Cap nhat thoi gian nhin thay phao do & kiem tra nut Nhan Ngay neu mat phao
+                    if bobber_x is not None:
+                        last_bobber_seen = cur_t
+                    else:
+                        # Khi khong thay phao do, kiem tra ngay nut "Nhan Ngay" da hien chua (nhu khi ca nho chi can 2 nhip)
+                        if cur_t - last_claim_check > 0.12:
+                            last_claim_check = cur_t
+                            claim_bgr = safe_grab(sct, claim_box)
+                            if claim_bgr is not None:
+                                c_hsv = cv2.cvtColor(claim_bgr, cv2.COLOR_BGR2HSV)
+                                c_green = cv2.inRange(
+                                    c_hsv,
+                                    np.array(config.HSV_READY_GREEN_LOWER, dtype=np.uint8),
+                                    np.array(config.HSV_READY_GREEN_UPPER, dtype=np.uint8),
+                                )
+                                if np.count_nonzero(c_green) > 300:
+                                    log(f"[3/4] Phat hien nut Nhan Ngay ({np.count_nonzero(c_green)}px xanh). Ket thuc minigame!")
+                                    state = "CLAIM_REWARD"
+                                    break
+
+                    # 2. Neu minigame da chay > 0.4s ma khong he thay phao do > 0.65s:
+                    # Trong minigame that phao luon qua lai lien tuc, khong the mat > 0.65s -> Tran da ket thuc!
+                    if (cur_t - minigame_start > 0.4) and (cur_t - last_bobber_seen > 0.65):
+                        log(f"[3/4] Keo ca hoan tat ({hit_count} Hoan Hao, phao bien mat). Nhan thuong...")
+                        state = "CLAIM_REWARD"
+                        break
 
                     # Cap nhat bo nho o vang khi nhan dien ro rang
                     if yellow_range is not None:
                         target_yellow = yellow_range
                         yellow_last_seen = cur_t
                         no_slider_since = 0.0
-                    elif target_yellow is not None and (cur_t - yellow_last_seen < 1.2):
+                    elif target_yellow is not None and (cur_t - yellow_last_seen < 1.0):
                         # Phao dang de len o vang lam che khuat -> Dung lai vi tri da nho
                         yellow_range = target_yellow
                         no_slider_since = 0.0
@@ -549,9 +612,8 @@ def main():
                         if no_slider_since == 0.0:
                             no_slider_since = cur_t
 
-                        # Neu da dat du 4 nhip Hoan Hao: chi can mat thanh truot 0.4s la tran dau da ket thuc
-                        # Neu chua du: cho 1.2s phong truong hop chu Hoan Hao tam che thanh truot
-                        slider_timeout = 0.4 if hit_count >= 4 else 1.2
+                        # Chi can mat o vang 0.35s sau khi da co it nhat 2 nhip Hoan Hao
+                        slider_timeout = 0.35 if hit_count >= 2 else 0.8
                         if cur_t - no_slider_since > slider_timeout:
                             log(f"[3/4] Keo ca hoan tat ({hit_count} Hoan Hao). Nhan thuong...")
                             state = "CLAIM_REWARD"
@@ -587,20 +649,20 @@ def main():
             # BUOC 4: NHAN QUA / DONG POPUP (CLAIM_REWARD)
             # =========================================================
             elif state == "CLAIM_REWARD":
-                log("[4/4] Cho hoat anh ca (1.4s)...")
-                if sleep_check(1.4):
+                log("[4/4] Cho hoat anh ca (0.8s)...")
+                if sleep_check(0.8):
                     break
 
                 # Nhip 1: Cham truc tiep vao tam the (Rel Y = 0.480) de dong the "Ky Luc Doi Moi", "Ca Moi"
                 touch_tap(card_screen_x, card_screen_y, desc="Dong the ky luc (Nhip 1)")
 
-                if sleep_check(0.6):
+                if sleep_check(0.4):
                     break
 
                 # Nhip 2: Cham nut "Nhan Ngay" (Rel Y = 0.870) cua man hinh ca thuong
                 touch_tap(claim_screen_x, claim_screen_y, desc="Nhan Ngay (Nhip 2)")
 
-                if sleep_check(0.6):
+                if sleep_check(0.4):
                     break
 
                 # Nhip 3: Xac nhan dong hoan toan popup ton du
@@ -609,7 +671,7 @@ def main():
                 fish_count += 1
                 log(f"[4/4] Nhan thuong thanh cong! Ca thu: {fish_count}")
 
-                if sleep_check(0.8):
+                if sleep_check(0.6):
                     break
 
                 state = "READY_TO_CAST"
