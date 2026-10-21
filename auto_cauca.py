@@ -49,8 +49,9 @@ try:
     hStdin = kernel32.GetStdHandle(-10)
     mode = ctypes.c_ulong()
     kernel32.GetConsoleMode(hStdin, ctypes.byref(mode))
-    mode.value &= ~0x0040
-    kernel32.SetConsoleMode(hStdin, mode)
+    # 0x0040: ENABLE_QUICK_EDIT_MODE, 0x0080: ENABLE_EXTENDED_FLAGS (bat buoc de thay doi QuickEdit)
+    new_mode = (mode.value & ~0x0040) | 0x0080
+    kernel32.SetConsoleMode(hStdin, new_mode)
 except Exception:
     pass
 
@@ -195,13 +196,13 @@ def safe_grab(sct, region: dict) -> Optional[np.ndarray]:
 
 
 def touch_tap(x: int, y: int, desc: str = "") -> None:
-    """Cham cam ung giu 70ms mo phong ngon tay nguoi bam tren Android."""
+    """Cham cam ung giu 60ms bang Win32 API mo phong tay cham Android."""
     if desc:
         log(f"-> {desc} ({x}, {y})")
-    pyautogui.moveTo(x, y, duration=0.02)
-    pyautogui.mouseDown(x, y)
-    time.sleep(0.07)
-    pyautogui.mouseUp(x, y)
+    user32.SetCursorPos(x, y)
+    user32.mouse_event(0x0002, 0, 0, 0, 0)  # MOUSEEVENTF_LEFTDOWN
+    time.sleep(0.06)
+    user32.mouse_event(0x0004, 0, 0, 0, 0)  # MOUSEEVENTF_LEFTUP
 
 
 def fast_tap(x: int, y: int) -> None:
@@ -348,6 +349,9 @@ def main():
     claim_screen_x = int(left + w * config.CLAIM_REL_X)
     claim_screen_y = int(top + h * config.CLAIM_REL_Y)
 
+    card_screen_x = int(left + w * config.CARD_REL_X)
+    card_screen_y = int(top + h * config.CARD_REL_Y)
+
     btn_box = {
         "top": btn_screen_y - 30,
         "left": btn_screen_x - 30,
@@ -462,8 +466,10 @@ def main():
                     last_heartbeat = now
 
                 if now - wait_ready_start > 2.5:
-                    log("[GIAI PHONG] Cham vi tri Nhan Ngay de giai phong popup...")
-                    touch_tap(claim_screen_x, claim_screen_y, desc="Nhan Ngay (giai phong)")
+                    log("[GIAI PHONG] Cham giai phong the bai / popup ton du...")
+                    touch_tap(card_screen_x, card_screen_y, desc="Giai phong the bai")
+                    time.sleep(0.3)
+                    touch_tap(claim_screen_x, claim_screen_y, desc="Giai phong Nhan Ngay")
                     if sleep_check(0.8):
                         break
                     wait_ready_start = time.time()
@@ -595,27 +601,35 @@ def main():
             # BUOC 4: NHAN QUA / DONG POPUP (CLAIM_REWARD)
             # =========================================================
             elif state == "CLAIM_REWARD":
-                log("[4/4] Cho hoat anh ca (1.6s)...")
-                if sleep_check(1.6):
+                log("[4/4] Cho hoat anh ca (1.4s)...")
+                if sleep_check(1.4):
                     break
 
-                touch_tap(claim_screen_x, claim_screen_y, desc="Nhan Ngay (Nhip 1)")
+                # Nhip 1: Cham truc tiep vao tam the (Rel Y = 0.480) de dong the "Ky Luc Doi Moi", "Ca Moi"
+                touch_tap(card_screen_x, card_screen_y, desc="Dong the ky luc (Nhip 1)")
 
-                if sleep_check(0.9):
+                if sleep_check(0.6):
                     break
 
+                # Nhip 2: Cham nut "Nhan Ngay" (Rel Y = 0.870) cua man hinh ca thuong
                 touch_tap(claim_screen_x, claim_screen_y, desc="Nhan Ngay (Nhip 2)")
+
+                if sleep_check(0.6):
+                    break
+
+                # Nhip 3: Xac nhan dong hoan toan popup ton du
+                touch_tap(claim_screen_x, claim_screen_y, desc="Xac nhan dong (Nhip 3)")
 
                 fish_count += 1
                 log(f"[4/4] Nhan thuong thanh cong! Ca thu: {fish_count}")
 
-                if sleep_check(1.0):
+                if sleep_check(0.8):
                     break
 
                 state = "READY_TO_CAST"
                 wait_ready_start = time.time()
                 log("=" * 30)
-                log("[VONG MOI] Chuan bi thả moi...")
+                log("[VONG MOI] Chuan bi tha moi...")
                 last_heartbeat = time.time()
 
     except pyautogui.FailSafeException:

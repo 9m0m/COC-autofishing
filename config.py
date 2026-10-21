@@ -24,6 +24,10 @@ SLIDER_REL_Y_MAX: float = 0.730
 CLAIM_REL_X: float = 0.465
 CLAIM_REL_Y: float = 0.870
 
+# Vị trí tâm thẻ bài (Đóng popup "Kỷ Lục Đội Mới", "Cá Mới", "Kỷ Lục Cá Nhân")
+CARD_REL_X: float = 0.500
+CARD_REL_Y: float = 0.480
+
 # ==============================================================================
 # 2. BÙ SAI SỐ VIỀN CỬA SỔ THEO TỪNG GIẢ LẬP
 # ==============================================================================

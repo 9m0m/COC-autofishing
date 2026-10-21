@@ -202,6 +202,16 @@ def main():
                 (cx + 25, cy + 5), cv2.FONT_HERSHEY_SIMPLEX, 0.5, (0, 0, 255), 2)
 
     # ---------------------------------------------------------------
+    # 3b. Tâm đóng thẻ kỷ lục (Vòng tròn xanh dương)
+    # ---------------------------------------------------------------
+    card_x = gx + int(game_w * config.CARD_REL_X)
+    card_y = gy + int(game_h * config.CARD_REL_Y)
+    cv2.circle(img, (card_x, card_y), 18, (255, 120, 0), 2)
+    cv2.circle(img, (card_x, card_y), 3, (255, 120, 0), -1)
+    cv2.putText(img, "<- DIEM DONG THE KY LUC / CA MOI",
+                (card_x + 25, card_y + 5), cv2.FONT_HERSHEY_SIMPLEX, 0.5, (255, 120, 0), 2)
+
+    # ---------------------------------------------------------------
     # 4. Vạch cảnh báo nút X (tính trên vùng game)
     # ---------------------------------------------------------------
     danger_y = gy + int(game_h * 0.950)
