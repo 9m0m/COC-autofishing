@@ -1,80 +1,74 @@
-# COC-autofishing
+# COC-autofishing (Auto Câu Cá Clash of Critters)
 
-Công cụ tự động câu cá cho sự kiện Câu cá trong game Clash of Critters trên các trình giả lập Android (BlueStacks 5, LDPlayer 9, NoxPlayer, MuMu Player, MEmu).
-
----
-
-## Tải về bản chạy ngay (.exe)
-
-Nếu không muốn cài đặt Python hay thao tác dòng lệnh, bạn có thể tải bản đóng gói sẵn:
-
-> **[Tải file auto_cauca.exe tại GitHub Releases](https://github.com/9m0m/COC-autofishing/releases/latest)**
+Công cụ tự động câu cá chính xác cao cho sự kiện Câu cá trong game Clash of Critters trên các trình giả lập Android phổ biến (BlueStacks 5, LDPlayer 9, NoxPlayer, MuMu Player, MEmu).
 
 ---
 
-## Hướng dẫn sử dụng nhanh
+## Lưu ý quan trọng trước khi sử dụng
 
-Để bot nhận diện toạ độ chính xác, hãy làm theo đúng thứ tự 3 bước sau:
-
-### Bước 1: Chuẩn bị giả lập và game
-1. Cài đặt độ phân giải giả lập về chế độ **Điện thoại (Portrait / 9:16)**, ví dụ `720x1280` hoặc `1080x1920`. DPI khuyến nghị: `240` hoặc `320`.
-2. Mở game Clash of Critters và vào giao diện sự kiện **Câu cá**.
-
-### Bước 2: Mở bot
-- **Nếu dùng file `.exe`:** Nhấp đúp vào file `auto_cauca.exe`.
-- **Nếu chạy từ mã nguồn Python:** Nhấp đúp vào file `run_auto.bat` (hoặc gõ `python auto_cauca.py`).
-
-Bot sẽ tự động kết nối với cửa sổ giả lập và ở trạng thái chờ sẵn sàng.
-
-### Bước 3: Điều khiển bằng phím tắt
-- **Bắt đầu câu:** Nhấn phím **`Q`** (hoặc phím Space) để bot bắt đầu quăng cần và câu cá tự động.
-- **Dừng bot:** Nhấn phím **`ESC`** bất kỳ lúc nào để dừng bot ngay lập tức (bấm ở bất kỳ đâu, không cần bấm vào cửa sổ dòng lệnh).
+- **Phương thức hoạt động**: Bot mô phỏng và điều khiển trực tiếp con trỏ chuột của máy tính để thao tác vào màn hình giả lập theo thời gian thực.
+- **Không sử dụng chuột làm việc khác khi bot đang chạy**: Trong suốt quá trình bot đang câu cá, bạn **không được sử dụng chuột** của máy tính đó (không lướt web, không làm việc hay chơi game khác trên cùng máy). Nếu bạn di chuyển chuột thủ công, thao tác bấm của bot sẽ bị lệch tâm và dẫn đến câu trượt.
+- **Dừng khẩn cấp**: Bất kỳ lúc nào bạn cần lấy lại chuột để làm việc, chỉ cần nhấn phím **ESC** trên bàn phím để dừng bot ngay lập tức.
 
 ---
 
-## Cơ chế hoạt động
+## Hướng dẫn sử dụng từng bước (Step-by-Step)
 
-Bot theo dõi màu sắc của nút câu cá ở góc dưới màn hình để tự động xử lý:
+Bạn chỉ cần thực hiện đúng theo các bước đơn giản sau:
 
-- **Nút Xanh lá (Sẵn sàng):** Quăng cần xuống nước.
-- **Nút Xám (Đang thả mồi):** Bot giữ yên lặng chờ cá cắn, tuyệt đối không click nhầm làm giật cần hỏng mồi.
-- **Nút Tím (Cá cắn câu):** Giật cần ngay lập tức và bật chế độ quét thanh trượt minigame 100+ FPS. Khi phao đỏ chạy trúng dải vàng, bot nhấp tức thì để đạt nhịp Hoàn Hảo.
-- **Màn hình tối (Bảng nhận cá):** Tự động chạm nhận thưởng tại toạ độ an toàn (`Rel Y = 0.870`), tránh hoàn toàn nút X thoát sự kiện ở đáy màn hình.
+### Bước 1: Cài đặt màn hình giả lập (Chỉ cần làm 1 lần đầu)
 
-Nếu game bị giật lag hoặc kẹt bảng thông báo quá 2.5 giây, bot tự động chạm giải phóng màn hình để tiếp tục vòng câu mới.
+Để bot nhận diện hình ảnh và toạ độ chuẩn xác:
+1. Mở phần **Cài đặt (Settings)** của trình giả lập bạn đang dùng (LDPlayer, BlueStacks, NoxPlayer, MuMu Player, MEmu).
+2. Vào mục **Hiển thị (Display)**:
+   - Chọn chế độ hiển thị: **Điện thoại (Khổ dọc / Portrait / tỉ lệ 9:16)**.
+   - Độ phân giải khuyến nghị: `720x1280` hoặc `1080x1920`.
+   - Chỉ số DPI: `240` hoặc `320`.
+3. Lưu cài đặt và khởi động lại giả lập nếu được nhắc.
+
+### Bước 2: Tải file chạy Auto về máy
+
+1. Tải bản chạy sẵn mới nhất (chỉ duy nhất 1 file `.exe`, không cần cài thêm bất kỳ công cụ nào):
+   > **[Nhấn vào đây để tải file auto_cauca.exe tại GitHub Releases](https://github.com/9m0m/COC-autofishing/releases/latest)**
+2. Đặt file `auto_cauca.exe` ở bất kỳ thư mục nào tiện cho bạn (ví dụ: màn hình Desktop hoặc thư mục Downloads).
+
+### Bước 3: Mở game và vào màn hình câu cá
+
+1. Khởi động game Clash of Critters trên giả lập.
+2. Vào khu vực sự kiện **Câu cá** sao cho màn hình hiển thị đầy đủ mặt nước và nút câu cá ở góc dưới.
+3. **Lưu ý**: Giữ cửa sổ giả lập luôn mở trên màn hình máy tính (không thu nhỏ / minimize cửa sổ xuống thanh Taskbar và không bị ứng dụng khác che khuất hoàn toàn).
+
+### Bước 4: Mở file auto_cauca.exe
+
+1. Nhấp đúp chuột vào file `auto_cauca.exe` đã tải về ở Bước 2.
+2. Một cửa sổ dòng lệnh màu đen sẽ hiện lên. Bot sẽ tự động dò tìm và kết nối với cửa sổ giả lập đang mở.
+3. Khi kết nối thành công, màn hình sẽ thông báo trạng thái sẵn sàng nhận lệnh.
+
+### Bước 5: Điều khiển Auto bằng bàn phím
+
+- **Bắt đầu câu:** Nhấn phím **`Q`** (hoặc phím **Space**) trên bàn phím. Bot sẽ bắt đầu chiếm quyền điều khiển chuột để quăng cần, canh giật nút tím, bắt minigame thanh trượt và nhận cá tự động.
+- **Tạm dừng / Dừng hẳn:** Nhấn phím **`ESC`** trên bàn phím bất kỳ lúc nào. Bot sẽ lập tức dừng lại và nhả quyền điều khiển chuột để bạn sử dụng máy tính bình thường.
 
 ---
 
-## Chạy từ mã nguồn Python (Dành cho lập trình viên)
+## Các cơ chế tự động thông minh đã tích hợp
 
-Yêu cầu môi trường: **Python 3.10** trở lên trên Windows.
-
-```bash
-# 1. Tải mã nguồn về máy
-git clone https://github.com/9m0m/COC-autofishing.git
-cd COC-autofishing
-
-# 2. Cài đặt các thư viện cần thiết
-pip install -r requirements.txt
-
-# 3. (Tuỳ chọn) Kiểm tra khung ngắm toạ độ trước khi câu
-python test_preview.py
-
-# 4. Khởi động bot câu cá
-python auto_cauca.py
-```
+- **Tự động quăng cần:** Quét nút màu xanh lá cây để vung cần xuống nước.
+- **Canh cá cắn siêu nhạy:** Chuyển trạng thái giật cần ngay tức thì khi nút chuyển sang màu tím rực, loại bỏ hoàn toàn việc giật non làm mất mồi.
+- **Minigame thanh trượt tốc độ cao:** Quét thanh trượt liên tục (60-100 khung hình/giây), có cơ chế khóa bộ nhớ ô vàng và quét va chạm liên tục giúp bắt chuẩn 100% kể cả ô vàng siêu mảnh (5-8px) của cá hiếm.
+- **Tự động nhận thưởng:** Tự đóng thẻ bài kỷ lục cá và bấm nút "Nhận Ngay" tại vị trí an toàn để chuyển sang vòng câu kế tiếp.
+- **Tự giải phóng chống kẹt:** Nếu gặp giật lag hoặc kẹt bảng thông báo quá 2.5 giây, bot sẽ tự bấm giải phóng để tiếp tục chu trình.
 
 ---
 
-## Cấu trúc thư mục
+## Câu hỏi thường gặp (FAQ)
 
-```text
-├── auto_cauca.py          # Mã nguồn điều khiển chính (State Machine V12.1)
-├── config.py              # Toạ độ tỉ lệ, ngưỡng màu HSV và bù viền giả lập
-├── test_preview.py        # Công cụ chụp và kiểm tra khung ngắm trực quan
-├── requirements.txt       # Danh sách thư viện phụ thuộc
-├── cai_dat.bat            # Script 1-click cài đặt thư viện tự động
-├── run_auto.bat           # Script 1-click khởi động bot
-├── kiem_tra_vi_tri.bat    # Script 1-click kiểm tra toạ độ
-└── HUONG_DAN.md           # Hướng dẫn chi tiết bằng tiếng Việt
-```
+1. **Bấm phím Q nhưng bot không quăng cần?**
+   - Kiểm tra xem cửa sổ giả lập đã vào đúng màn hình câu cá chưa.
+   - Đảm bảo cửa sổ giả lập không bị thu nhỏ (minimize) xuống thanh tác vụ.
+
+2. **Bot bấm lệch vị trí các nút?**
+   - Kiểm tra lại cài đặt độ phân giải giả lập ở Bước 1. Phải chắc chắn giả lập đang ở chế độ Điện thoại (khổ dọc 9:16 như `720x1280` hoặc `1080x1920`).
+
+3. **Tôi muốn làm việc khác trên máy tính trong lúc auto câu thì sao?**
+   - Do bot sử dụng trực tiếp chuột của máy tính để bấm, bạn không thể dùng chuột làm việc khác trên cùng máy tính đó trong lúc bot đang chạy. Hãy nhấn phím `ESC` để dừng bot khi bạn cần dùng chuột.
