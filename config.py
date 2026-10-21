@@ -36,9 +36,12 @@ CARD_REL_Y: float = 0.480
 EMULATOR_VIEWPORT_OFFSETS: dict = {
     "bluestacks": (32, 0, 50),   # BlueStacks 5: thanh công cụ nằm bên phải ~50px
     "app player": (32, 0, 50),   # BlueStacks App Player
+    "hd-player":  (32, 0, 50),   # BlueStacks 5 process
     "ldplayer":   (34, 0, 44),   # LDPlayer 9: thanh công cụ nằm bên phải ~44px
+    "dnplayer":   (34, 0, 44),   # LDPlayer process
     "nox":        (32, 0, 46),   # NoxPlayer: thanh công cụ nằm bên phải ~46px
-    "mumu":       (30, 0,  0),   # MuMu Player: không có sidebar cố định
+    "mumu":       (32, 0,  0),   # MuMu Player: không có sidebar cố định, thanh tab ~32px
+    "nemu":       (32, 0,  0),   # MuMu Player process (NemuPlayer)
     "memu":       (32, 0, 44),   # MEmu: thanh công cụ nằm bên phải ~44px
 }
 

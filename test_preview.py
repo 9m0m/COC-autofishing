@@ -39,48 +39,99 @@ import pygetwindow as gw
 import config
 
 user32 = ctypes.windll.user32
+kernel32 = ctypes.windll.kernel32
+
+EMULATOR_PROCESS_KEYWORDS = [
+    "nemuplayer", "mumuplayer", "mumu", "nemu",      # MuMu Player 12 / 6 / X
+    "hd-player", "bluestacks",                        # BlueStacks 5
+    "dnplayer", "ldplayer", "ldboxplayer",            # LDPlayer 9 / 5 / 4
+    "nox",                                            # NoxPlayer
+    "memu",                                           # MEmu
+]
+
+EMULATOR_TITLE_KEYWORDS = [
+    "bluestacks", "app player",
+    "ldplayer",
+    "nox",
+    "mumu", "nemu",
+    "memu",
+    "clash of critters", "critters",
+]
+
+
+def get_process_name_by_hwnd(hwnd: int) -> str:
+    """Lay ten file thuc thi (.exe) cua process so huu cua so (chu thuong)."""
+    try:
+        pid = wintypes.DWORD()
+        user32.GetWindowThreadProcessId(hwnd, ctypes.byref(pid))
+        if not pid.value:
+            return ""
+        h_proc = kernel32.OpenProcess(0x1000, False, pid.value)  # PROCESS_QUERY_LIMITED_INFORMATION
+        if not h_proc:
+            return ""
+        buf = ctypes.create_unicode_buffer(512)
+        size = wintypes.DWORD(512)
+        exe_name = ""
+        if kernel32.QueryFullProcessImageNameW(h_proc, 0, buf, ctypes.byref(size)):
+            exe_name = os.path.basename(buf.value).lower()
+        kernel32.CloseHandle(h_proc)
+        return exe_name
+    except Exception:
+        return ""
 
 
 def find_emulator_window() -> Optional[gw.Window]:
     """
-    Tự động tìm kiếm cửa sổ của các giả lập Android phổ biến:
-    BlueStacks, LDPlayer, NoxPlayer, MuMu Player, MEmu.
+    Tim kiem cua so cua cac gia lap Android pho bien (BlueStacks, LDPlayer, Nox, MuMu, MEmu).
+    Ket hop ca nhan dien tieu de (Title) va tien trinh (.exe) de ho tro moi phien ban (ke ca tab MuMu/Android).
+    Loc bo triet de cac cua so thu nho (minimized), cua so an hoac toa do am (-32000).
     """
-    targets = ["BlueStacks", "App Player", "LDPlayer", "Nox", "MuMu", "MEmu"]
-    found = []
+    candidates = []
     try:
         for w in gw.getAllWindows():
-            title = w.title
-            if not title:
+            hwnd = w._hWnd
+            # 1. Bo qua cua so dang bi thu nho (Minimized / IsIconic)
+            if user32.IsIconic(hwnd):
                 continue
-            for t in targets:
-                if t.lower() in title.lower():
-                    rect = wintypes.RECT()
-                    user32.GetWindowRect(w._hWnd, ctypes.byref(rect))
-                    width = rect.right - rect.left
-                    height = rect.bottom - rect.top
-                    if width > 250 and height > 400:
-                        found.append(w)
-                        break
+
+            rect = wintypes.RECT()
+            user32.GetWindowRect(hwnd, ctypes.byref(rect))
+            left = rect.left
+            top = rect.top
+            width = rect.right - rect.left
+            height = rect.bottom - rect.top
+
+            # 2. Bo qua cua so ngoai man hinh hoac toa do am thu nho cua Windows (-32000)
+            if left < -10000 or top < -10000:
+                continue
+
+            # 3. Kich thuoc toi thieu cua man hinh gia lap (loai bo cua so dummy 199x4 hoac notification)
+            if (width < 250 or height < 350) and (height < 250 or width < 350):
+                continue
+
+            title = (w.title or "").strip()
+            title_lower = title.lower()
+            proc_name = get_process_name_by_hwnd(hwnd)
+
+            title_matched = any(k in title_lower for k in EMULATOR_TITLE_KEYWORDS)
+            proc_matched = any(k in proc_name for k in EMULATOR_PROCESS_KEYWORDS)
+
+            if title_matched or proc_matched:
+                area = width * height
+                candidates.append((area, w, proc_name, title))
     except Exception:
         pass
 
-    if found:
-        return found[0]
+    if not candidates:
+        return None
 
-    for t in targets:
-        try:
-            wins = gw.getWindowsWithTitle(t)
-            if wins:
-                return wins[0]
-        except Exception:
-            pass
-
-    return None
+    # Sap xep uu tien cua so co dien tich thuc te lon nhat (man hinh choi game that)
+    candidates.sort(key=lambda x: x[0], reverse=True)
+    return candidates[0][1]
 
 
 def get_window_rect(hwnd: int) -> Tuple[int, int, int, int]:
-    """Lấy toạ độ thực của toàn bộ cửa sổ (bao gồm cả sidebar/titlebar)."""
+    """Lay toa do thuc cua toan bo cua so (bao gom ca sidebar/titlebar)."""
     rect = wintypes.RECT()
     user32.GetWindowRect(hwnd, ctypes.byref(rect))
     return rect.left, rect.top, rect.right - rect.left, rect.bottom - rect.top
@@ -88,11 +139,14 @@ def get_window_rect(hwnd: int) -> Tuple[int, int, int, int]:
 
 def get_game_viewport(hwnd: int, win_title: str) -> Tuple[int, int, int, int]:
     """
-    Trả về (game_left, game_top, game_width, game_height) đã loại bỏ
-    sidebar & title bar. Dùng cùng logic với auto_cauca.py để đảm bảo
-    preview khớp 100% với vị trí bot thực tế.
+    Tra ve (game_left, game_top, game_width, game_height) da loai bo
+    sidebar & title bar. Dung cung logic voi auto_cauca.py de dam bao
+    preview khop 100% voi vi tri bot thuc te.
     """
-    if "ldplayer" in win_title.lower():
+    proc_name = get_process_name_by_hwnd(hwnd)
+    title_lower = win_title.lower()
+
+    if ("ldplayer" in title_lower) or ("dnplayer" in proc_name):
         try:
             render_hwnd = user32.FindWindowExW(hwnd, None, "RenderWindow", None)
             if render_hwnd:
@@ -107,9 +161,8 @@ def get_game_viewport(hwnd: int, win_title: str) -> Tuple[int, int, int, int]:
 
     left, top, w, h = get_window_rect(hwnd)
     title_bar_px, sidebar_left_px, sidebar_right_px = 0, 0, 0
-    title_lower = win_title.lower()
     for keyword, (tb, sl, sr) in config.EMULATOR_VIEWPORT_OFFSETS.items():
-        if keyword in title_lower:
+        if (keyword in title_lower) or (keyword in proc_name):
             title_bar_px     = tb
             sidebar_left_px  = sl
             sidebar_right_px = sr
