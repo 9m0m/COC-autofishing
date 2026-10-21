@@ -445,20 +445,10 @@ def main():
                 if green_px > config.GREEN_PX_THRESHOLD:
                     log(f"[1/4] Tha can ({green_px}px xanh)...")
                     touch_tap(btn_screen_x, btn_screen_y, desc="Nut quang can")
-                    if sleep_check(1.2):
+                    if sleep_check(1.5):
                         break
-
-                    c_bgr = safe_grab(sct, btn_box)
-                    if c_bgr is not None:
-                        c_green, c_grey, _ = analyze_button_colors(c_bgr)
-                        if c_green < 250 and c_grey > 300:
-                            log("[2/4] Can xuong nuoc. Cho ca can...")
-                            state = "WAITING_BITE"
-                            last_heartbeat = time.time()
-                        else:
-                            log("[THU LAI] Nut van xanh -> Thu lai...")
-                            if sleep_check(0.2):
-                                break
+                    state = "WAITING_BITE"
+                    last_heartbeat = time.time()
                     continue
 
                 if now - last_heartbeat > 1.2:
@@ -488,7 +478,8 @@ def main():
                     continue
                 green_px, grey_px, purple_px = analyze_button_colors(bgr)
 
-                if green_px > config.GREEN_PX_THRESHOLD:
+                # Can chi thuc su tren bo khi nut XANH va nut XAM da bien mat han (< 300)
+                if green_px > config.GREEN_PX_THRESHOLD and grey_px < 300:
                     log(f"[PHUC HOI] Can tren bo ({green_px}px xanh) -> Tha can lai!")
                     state = "READY_TO_CAST"
                     wait_ready_start = time.time()
@@ -555,25 +546,20 @@ def main():
                         no_slider_since = 0.0
 
                     if yellow_range is None:
-                        b_bgr = safe_grab(sct, btn_box)
-                        if b_bgr is None:
-                            time.sleep(0.05)
-                            continue
-                        _, _, purple_px = analyze_button_colors(b_bgr)
+                        if no_slider_since == 0.0:
+                            no_slider_since = cur_t
 
-                        if purple_px > config.PURPLE_PX_THRESHOLD:
-                            no_slider_since = 0.0
-                            time.sleep(0.01)
-                            continue
-                        else:
-                            if no_slider_since == 0.0:
-                                no_slider_since = cur_t
-                            if cur_t - no_slider_since > 0.8:
-                                log(f"[3/4] Keo ca hoan tat ({hit_count} Hoan Hao). Nhan thuong...")
-                                state = "CLAIM_REWARD"
-                                break
-                            time.sleep(0.015)
-                            continue
+                        # Neu da dat du 4 nhip Hoan Hao: chi can mat thanh truot 0.4s la tran dau da ket thuc
+                        # Neu chua du: cho 1.2s phong truong hop chu Hoan Hao tam che thanh truot
+                        slider_timeout = 0.4 if hit_count >= 4 else 1.2
+                        if cur_t - no_slider_since > slider_timeout:
+                            log(f"[3/4] Keo ca hoan tat ({hit_count} Hoan Hao). Nhan thuong...")
+                            state = "CLAIM_REWARD"
+                            break
+                        time.sleep(0.015)
+                        continue
+                    else:
+                        no_slider_since = 0.0
 
                     if bobber_x is not None:
                         ystart, yend = yellow_range
