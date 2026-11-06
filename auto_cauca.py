@@ -450,45 +450,64 @@ def main():
     except Exception:
         pass
 
-    left, top, w, h = get_game_viewport(hwnd, win.title)
+    left, top, w, h = 0, 0, 0, 0
+    btn_screen_x, btn_screen_y = 0, 0
+    claim_screen_x, claim_screen_y = 0, 0
+    card_screen_x, card_screen_y = 0, 0
+    btn_box = {}
+    claim_box = {}
+    slider_box = {}
+
+    def sync_viewport(force: bool = False) -> bool:
+        """Tu dong dong bo lai toa do neu cua so gia lap bi di chuyen hoac thay doi kich thuoc."""
+        nonlocal left, top, w, h, btn_screen_x, btn_screen_y, claim_screen_x, claim_screen_y
+        nonlocal card_screen_x, card_screen_y, btn_box, claim_box, slider_box
+        try:
+            cur_left, cur_top, cur_w, cur_h = get_game_viewport(hwnd, win.title)
+            if force or (cur_left, cur_top, cur_w, cur_h) != (left, top, w, h):
+                left, top, w, h = cur_left, cur_top, cur_w, cur_h
+                btn_screen_x = int(left + w * config.BUTTON_REL_X)
+                btn_screen_y = int(top + h * config.BUTTON_REL_Y)
+                claim_screen_x = int(left + w * config.CLAIM_REL_X)
+                claim_screen_y = int(top + h * config.CLAIM_REL_Y)
+                card_screen_x = int(left + w * config.CARD_REL_X)
+                card_screen_y = int(top + h * config.CARD_REL_Y)
+                btn_box = {
+                    "top": btn_screen_y - 30,
+                    "left": btn_screen_x - 30,
+                    "width": 60,
+                    "height": 60,
+                }
+                claim_box = {
+                    "top": claim_screen_y - 15,
+                    "left": claim_screen_x - 30,
+                    "width": 60,
+                    "height": 30,
+                }
+                slider_left = int(left + w * config.SLIDER_REL_X_MIN)
+                slider_right = int(left + w * config.SLIDER_REL_X_MAX)
+                slider_top = int(top + h * config.SLIDER_REL_Y_MIN)
+                slider_bottom = int(top + h * config.SLIDER_REL_Y_MAX)
+                slider_box = {
+                    "top": slider_top,
+                    "left": slider_left,
+                    "width": slider_right - slider_left,
+                    "height": slider_bottom - slider_top,
+                }
+                return True
+        except Exception:
+            pass
+        return False
+
+    sync_viewport(force=True)
     proc_name = get_process_name_by_hwnd(hwnd)
     display_title = f"'{win.title}' ({proc_name})" if proc_name else f"'{win.title}'"
     log(f"[KET NOI] {display_title} | Game: {w}x{h} tai ({left}, {top})")
-
-    btn_screen_x = int(left + w * config.BUTTON_REL_X)
-    btn_screen_y = int(top + h * config.BUTTON_REL_Y)
-
-    claim_screen_x = int(left + w * config.CLAIM_REL_X)
-    claim_screen_y = int(top + h * config.CLAIM_REL_Y)
-
-    card_screen_x = int(left + w * config.CARD_REL_X)
-    card_screen_y = int(top + h * config.CARD_REL_Y)
-
-    btn_box = {
-        "top": btn_screen_y - 30,
-        "left": btn_screen_x - 30,
-        "width": 60,
-        "height": 60,
-    }
-
-    claim_box = {
-        "top": claim_screen_y - 15,
-        "left": claim_screen_x - 30,
-        "width": 60,
-        "height": 30,
-    }
-
-    slider_left = int(left + w * config.SLIDER_REL_X_MIN)
-    slider_right = int(left + w * config.SLIDER_REL_X_MAX)
-    slider_top = int(top + h * config.SLIDER_REL_Y_MIN)
-    slider_bottom = int(top + h * config.SLIDER_REL_Y_MAX)
-
-    slider_box = {
-        "top": slider_top,
-        "left": slider_left,
-        "width": slider_right - slider_left,
-        "height": slider_bottom - slider_top,
-    }
+    print("*" * 50)
+    log("[CHU Y] Hay kiem tra dong [KET NOI] ben tren xem da DUNG gia lap ban choi chua!")
+    log("[CHU Y] Khong di chuyen cua so gia lap khi tool dang cau de tranh lech chuot.")
+    log("[CHU Y] (Neu lo di chuyen: Nhan ESC tam dung roi nhan Ctrl+Q de dong bo lai).")
+    print("*" * 50)
 
     sct = mss.MSS() if hasattr(mss, "MSS") else mss.mss()
     fish_count = 0
@@ -519,12 +538,14 @@ def main():
                 if last_heartbeat == 0:
                     print("-" * 50)
                     log("[CHO LENH] Mo su kien Cau ca tren gia lap.")
+                    log("[CHU Y] Kiem tra log [KET NOI] ben tren xem da dung gia lap chua.")
                     log("[CHO LENH] Nhan Ctrl+Q de BAT DAU | Nhan ESC de THOAT...")
                     print("-" * 50)
                 else:
                     print("-" * 50)
                     log("[TAM DUNG] Da tam dung auto. Chuot da duoc giai phong!")
                     log(f"[TAM DUNG] Tong so ca da cau: {fish_count}")
+                    log("[CHU Y] Neu ban da di chuyen cua so, tool se tu dong bo lai toa do khi Resume.")
                     log("[CHO LENH] Nhan Ctrl+Q de TIEP TUC (Resume)...")
                     log("[CHO LENH] Nhan ESC de THOAT HAN tool...")
                     print("-" * 50)
@@ -552,6 +573,9 @@ def main():
                 _stop_event.clear()
                 keyboard.add_hotkey("esc", _stop_event.set, suppress=True)
 
+                if sync_viewport():
+                    log(f"[DONG BO] Cua so da di chuyen -> Cap nhat toa do moi: {w}x{h} tai ({left}, {top})")
+
                 if last_heartbeat == 0:
                     log("[KHOI DONG] Auto bat dau! Nhan ESC bat cu luc nao de TAM DUNG.\n")
                 else:
@@ -571,6 +595,7 @@ def main():
             # BUOC 1: CHUAN BI QUANG CAN (READY_TO_CAST)
             # =========================================================
             if state == "READY_TO_CAST":
+                sync_viewport()
                 # 1. Uu tien kiem tra va giai phong nut "Nhan Ngay" truoc de khong quang can de len popup
                 claim_bgr = safe_grab(sct, claim_box)
                 if claim_bgr is not None:
