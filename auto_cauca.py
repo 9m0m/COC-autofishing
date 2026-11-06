@@ -350,23 +350,36 @@ def detect_yellow_and_bobber(roi_img: np.ndarray) -> Tuple[Optional[Tuple[int, i
         area = cv2.contourArea(c)
         if area >= 8:  # Nguong sieu nhay de khong bo sot o vang hep khi gap ca hiem / ca ky luc
             x, y, w, h = cv2.boundingRect(c)
-            # Loai bo cac contour sat mep tren/duoi do lem text hoac icon ngoai roi vao
-            if y <= 2 and h <= 12:
+            # CO LAP KHONG GIAN RANH TRUOT:
+            # O vang muc tieu luon nam co dinh trong ranh truot (0.25 <= Y <= 0.78 trong ROI)
+            # Loai bo 100% chu 'Hoan hao!' va cac tia sang lap lanh bay o phia tren ranh truot (Y < 0.25)
+            if y < int(0.25 * rh) or (y + h) > int(0.78 * rh):
                 continue
-            if y + h >= rh - 2 and h <= 12:
+            # Loai bo can cau ben mep trai (x < 12) hoac nut icon chat ben mep phai
+            if x < 12 or (x + w) > rw - 8:
                 continue
-            if w <= config.YELLOW_MAX_WIDTH:
+            # Chieu cao toi thieu cua o vang trong ranh phai >= 10px (loai bo tia sang vun)
+            if h >= 10 and w <= config.YELLOW_MAX_WIDTH:
                 valid_yellows.append((x, x + w, area))
 
     if valid_yellows:
-        # Neu phao che o giua chia thanh 2 manh vang, ghep noi lai bien do thuc
-        min_x = min(item[0] for item in valid_yellows)
-        max_x = max(item[1] for item in valid_yellows)
-        if (max_x - min_x) <= config.YELLOW_MAX_WIDTH:
-            yellow_range = (min_x, max_x)
-        else:
-            valid_yellows.sort(key=lambda item: item[2], reverse=True)
+        if len(valid_yellows) == 1:
             yellow_range = (valid_yellows[0][0], valid_yellows[0][1])
+        else:
+            # Sap xep theo dien tich giam dan de uu tien manh vang chinh
+            valid_yellows.sort(key=lambda item: item[2], reverse=True)
+            main_box = valid_yellows[0]
+            second_box = valid_yellows[1]
+            left_box = min(main_box, second_box, key=lambda b: b[0])
+            right_box = max(main_box, second_box, key=lambda b: b[0])
+            gap = right_box[0] - left_box[1]
+            merged_width = right_box[1] - left_box[0]
+            # Chi ghep neu khoang cach <= 26px (kich thuoc phao che doi o vang) va tong rong <= 130px
+            # Tranh viec ghep noi voi hat nhieu o xa lam o vang bi phong to gia tao
+            if gap <= 26 and merged_width <= config.YELLOW_MAX_WIDTH:
+                yellow_range = (left_box[0], right_box[1])
+            else:
+                yellow_range = (main_box[0], main_box[1])
 
     # 2. Quet phao do (bobber)
     lower_red1 = np.array(config.HSV_RED_LOWER1, dtype=np.uint8)
@@ -382,9 +395,16 @@ def detect_yellow_and_bobber(roi_img: np.ndarray) -> Tuple[Optional[Tuple[int, i
     valid_reds = []
     for c in r_contours:
         area = cv2.contourArea(c)
-        if area >= 12:
+        # Phao do that luon co dien tich >= 50px va kich thuoc w >= 10px, h >= 10px
+        # Loai bo 100% phao hoa giay confetti mau hong/do roi tren the bai (thuong chi 7x4px, area ~16px)
+        if area >= 50:
             x, y, w, h = cv2.boundingRect(c)
-            if y <= 2 and h <= 12:
+            if w < 10 or h < 10:
+                continue
+            # Loai bo chu 'Hoan hao!' co vien do/cam phia tren va can cau o mep trai
+            if y < int(0.15 * rh) or (y + h) > int(0.85 * rh):
+                continue
+            if x < 12 or (x + w) > rw - 8:
                 continue
             M = cv2.moments(c)
             if M["m00"] > 0:
@@ -475,6 +495,9 @@ def main():
     state = "READY_TO_CAST"
     last_heartbeat = 0
     wait_ready_start = time.time()
+    bite_wait_start = time.time()
+    no_rod_start = 0.0
+    last_claim_check_waiting = 0.0
 
     # Khoi tao trang thai: bat dau o che do cho lenh
     _stop_event.set()
@@ -536,6 +559,9 @@ def main():
                 state = "READY_TO_CAST"
                 wait_ready_start = time.time()
                 last_heartbeat = time.time()
+                bite_wait_start = time.time()
+                no_rod_start = 0.0
+                last_claim_check_waiting = 0.0
                 continue
 
             now = time.time()
@@ -544,6 +570,20 @@ def main():
             # BUOC 1: CHUAN BI QUANG CAN (READY_TO_CAST)
             # =========================================================
             if state == "READY_TO_CAST":
+                # 1. Uu tien kiem tra va giai phong nut "Nhan Ngay" truoc de khong quang can de len popup
+                claim_bgr = safe_grab(sct, claim_box)
+                if claim_bgr is not None:
+                    c_hsv = cv2.cvtColor(claim_bgr, cv2.COLOR_BGR2HSV)
+                    c_green = cv2.inRange(
+                        c_hsv,
+                        np.array(config.HSV_READY_GREEN_LOWER, dtype=np.uint8),
+                        np.array(config.HSV_READY_GREEN_UPPER, dtype=np.uint8),
+                    )
+                    if np.count_nonzero(c_green) > 300:
+                        log(f"[PHUC HOI] Phat hien nut Nhan Ngay ({np.count_nonzero(c_green)}px xanh). Tien hanh nhan thuong!")
+                        state = "CLAIM_REWARD"
+                        continue
+
                 bgr = safe_grab(sct, btn_box)
                 if bgr is None:
                     if sleep_check(0.5):
@@ -563,6 +603,9 @@ def main():
                 if grey_px > config.GREY_PX_THRESHOLD:
                     log(f"[PHUC HOI] Can dang duoi nuoc ({grey_px}px xam) -> Cho ca can...")
                     state = "WAITING_BITE"
+                    bite_wait_start = time.time()
+                    no_rod_start = 0.0
+                    last_claim_check_waiting = 0.0
                     last_heartbeat = now
                     continue
 
@@ -572,22 +615,11 @@ def main():
                     if sleep_check(1.5):
                         continue
                     state = "WAITING_BITE"
+                    bite_wait_start = time.time()
+                    no_rod_start = 0.0
+                    last_claim_check_waiting = 0.0
                     last_heartbeat = time.time()
                     continue
-
-                # Kiem tra nhanh: Man hinh Nhan Ngay (phuc hoi khi resume ngay luc dang co nut Nhan Ngay)
-                claim_bgr = safe_grab(sct, claim_box)
-                if claim_bgr is not None:
-                    c_hsv = cv2.cvtColor(claim_bgr, cv2.COLOR_BGR2HSV)
-                    c_green = cv2.inRange(
-                        c_hsv,
-                        np.array(config.HSV_READY_GREEN_LOWER, dtype=np.uint8),
-                        np.array(config.HSV_READY_GREEN_UPPER, dtype=np.uint8),
-                    )
-                    if np.count_nonzero(c_green) > 300:
-                        log(f"[PHUC HOI] Phat hien nut Nhan Ngay ({np.count_nonzero(c_green)}px xanh). Tien hanh nhan thuong!")
-                        state = "CLAIM_REWARD"
-                        continue
 
                 if now - last_heartbeat > 1.2:
                     log(f"[Cho] Xanh: {green_px} | Xam: {grey_px} | Tim: {purple_px}")
@@ -609,6 +641,22 @@ def main():
             # BUOC 2: CHO CA CAN CAU (WAITING_BITE)
             # =========================================================
             elif state == "WAITING_BITE":
+                # 1. Kiem tra dinh ky nut Nhan Ngay (tranh ket neu popup phan thuong/ky luc hien bat ngo)
+                if now - last_claim_check_waiting > 0.35:
+                    last_claim_check_waiting = now
+                    claim_bgr = safe_grab(sct, claim_box)
+                    if claim_bgr is not None:
+                        c_hsv = cv2.cvtColor(claim_bgr, cv2.COLOR_BGR2HSV)
+                        c_green = cv2.inRange(
+                            c_hsv,
+                            np.array(config.HSV_READY_GREEN_LOWER, dtype=np.uint8),
+                            np.array(config.HSV_READY_GREEN_UPPER, dtype=np.uint8),
+                        )
+                        if np.count_nonzero(c_green) > 300:
+                            log(f"[PHUC HOI] Phat hien nut Nhan Ngay ({np.count_nonzero(c_green)}px xanh) khi dang cho ca can! Tien hanh nhan thuong...")
+                            state = "CLAIM_REWARD"
+                            continue
+
                 bgr = safe_grab(sct, btn_box)
                 if bgr is None:
                     if sleep_check(0.5):
@@ -627,6 +675,7 @@ def main():
                     log(f"[2/4] Dang cho... Xam: {grey_px} | Tim: {purple_px}")
                     last_heartbeat = now
 
+                # 2. Phat hien ca can
                 if purple_px > config.PURPLE_PX_THRESHOLD:
                     log(f"[2/4] CA CAN! ({purple_px}px tim) -> GIAT CAN!")
                     fast_tap(btn_screen_x, btn_screen_y)
@@ -634,9 +683,42 @@ def main():
                         continue
                     state = "MINIGAME_SLIDER"
                     log("[3/4] Quet thanh truot...")
-                else:
-                    if sleep_check(0.015):
+                    continue
+
+                # 3. Kiem tra bat thuong: Khong co can duoi nuoc (Xam < 100 va Tim < 100)
+                # Neu keo dai > 3s -> Co the popup phan thuong/the bai dang che hoac click tha can bi hut
+                if grey_px < 100 and purple_px < 100:
+                    if no_rod_start == 0.0:
+                        no_rod_start = now
+                    elif now - no_rod_start > 3.0:
+                        log(f"[GIAI PHOI] Khong co can duoi nuoc (Xam: {grey_px}, Tim: {purple_px}) > 3s -> Tu giai thoat popup/the bai...")
+                        touch_tap(card_screen_x, card_screen_y, desc="Giai phong the bai")
+                        time.sleep(0.3)
+                        touch_tap(claim_screen_x, claim_screen_y, desc="Giai phong Nhan Ngay")
+                        state = "READY_TO_CAST"
+                        wait_ready_start = time.time()
+                        no_rod_start = 0.0
+                        if sleep_check(0.8):
+                            continue
                         continue
+                else:
+                    no_rod_start = 0.0
+
+                # 4. Timeout an toan: Neu cho ca can > 18s ma van chua can -> Tu dong giai phong va tha lai can
+                if now - bite_wait_start > 18.0:
+                    log("[TIMEOUT] Cho ca can > 18s -> Tu dong giai phong va thu tha lai can...")
+                    touch_tap(card_screen_x, card_screen_y, desc="Dong the ton du")
+                    time.sleep(0.3)
+                    touch_tap(claim_screen_x, claim_screen_y, desc="Nhan Ngay ton du")
+                    state = "READY_TO_CAST"
+                    wait_ready_start = time.time()
+                    no_rod_start = 0.0
+                    if sleep_check(0.8):
+                        continue
+                    continue
+
+                if sleep_check(0.015):
+                    continue
 
             # =========================================================
             # BUOC 3: MINI-GAME THANH TRUOT (MINIGAME_SLIDER)
@@ -650,12 +732,11 @@ def main():
                 last_claim_check = 0.0
                 prev_bobber_x = None
 
-                # Bo nho o vang (Khoa cung do rong lon nhat, tranh mat dau khi phao de len che khuat)
-                target_yellow = None
-                yellow_last_seen = 0.0
-
-                # Khoa tranh click trung lap trong cung 1 luot phao di qua o vang
-                tapped_in_current_pass = False
+                # Co che 2 pha chuan:
+                # 1. SEARCH_BOX: Cho game xoa hieu ung cu va sinh o vang moi -> Khoa vi tri
+                # 2. WAIT_HIT: Giu nguyen toa do da khoa, cho phao do toi de click (khong so phao che khuat)
+                slider_phase = "SEARCH_BOX"
+                locked_yellow = None
 
                 while True:
                     if _stop_event.is_set():
@@ -696,79 +777,90 @@ def main():
                                     state = "CLAIM_REWARD"
                                     break
 
-                    # 2. Neu minigame da chay > 0.4s ma khong he thay phao do > 0.65s:
-                    # Trong minigame that phao luon qua lai lien tuc, khong the mat > 0.65s -> Tran da ket thuc!
+                    # 2. Neu minigame da chay > 0.4s ma khong he thay phao do > 0.65s -> Tran da ket thuc!
                     if (cur_t - minigame_start > 0.4) and (cur_t - last_bobber_seen > 0.65):
                         log(f"[3/4] Keo ca hoan tat ({hit_count} Hoan Hao, phao bien mat). Nhan thuong...")
                         state = "CLAIM_REWARD"
                         break
 
-                    # 3. Cap nhat va duy tri bo nho o vang (Khong bao gio lam teo nho o vang khi phao che de len)
-                    if yellow_range is not None:
-                        new_start, new_end = yellow_range
-                        if target_yellow is None:
-                            target_yellow = yellow_range
-                        else:
-                            old_start, old_end = target_yellow
-                            old_center = (old_start + old_end) / 2
-                            new_center = (new_start + new_end) / 2
-                            # Neu o vang moi phat hien nam sat vi tri cu: Hop nhat giu do rong lon nhat!
-                            if abs(new_center - old_center) < 35:
-                                target_yellow = (min(old_start, new_start), max(old_end, new_end))
-                            else:
-                                # O vang da thuc su doi cho sang vi tri khac tren thanh ray (sau khi Hoan Hao)
-                                target_yellow = yellow_range
-                        yellow_last_seen = cur_t
-                        no_slider_since = 0.0
-                    elif target_yellow is not None and (cur_t - yellow_last_seen < 1.5):
-                        # Phao dang de len 100% che khuat o vang -> Su dung vi tri da khoa
-                        yellow_range = target_yellow
-                        no_slider_since = 0.0
-
-                    if yellow_range is None:
+                    # 3. Kiem tra mat thanh truot
+                    if yellow_range is None and locked_yellow is None:
                         if no_slider_since == 0.0:
                             no_slider_since = cur_t
-
-                        # Chi can mat o vang 0.35s sau khi da co it nhat 2 nhip Hoan Hao
-                        slider_timeout = 0.35 if hit_count >= 2 else 0.8
+                        slider_timeout = 0.35 if hit_count >= 2 else 0.85
                         if cur_t - no_slider_since > slider_timeout:
                             log(f"[3/4] Keo ca hoan tat ({hit_count} Hoan Hao). Nhan thuong...")
                             state = "CLAIM_REWARD"
                             break
-                        continue
                     else:
                         no_slider_since = 0.0
 
-                    if bobber_x is not None and yellow_range is not None:
-                        ystart, yend = yellow_range
-                        y_width = yend - ystart
+                    # -----------------------------------------------------------------
+                    # PHA 1: SEARCH_BOX - Cho game sinh o vang moi & khoa toa do
+                    # -----------------------------------------------------------------
+                    if slider_phase == "SEARCH_BOX":
+                        # Sau moi cu click, cho 0.20s de game xoa hieu ung Hoan Hao/tia sang cu
+                        # Tuyet doi khong click trong khoang thoi gian chuyen tiep nay (tranh bi click hut tru 2s)
+                        if cur_t - last_hit_time < 0.20:
+                            prev_bobber_x = bobber_x
+                            continue
 
-                        # Kiem tra truc tiep: Phao nam trong o vang
-                        inside = (ystart <= bobber_x <= yend)
+                        # Khi het thoi gian cooldown chuyen tiep, bat dau tim o vang moi
+                        if yellow_range is not None:
+                            ystart, yend = yellow_range
+                            y_width = yend - ystart
+                            # O vang moi hop le phai co do rong >= 8px
+                            if y_width >= 8:
+                                locked_yellow = (ystart, yend)
+                                slider_phase = "WAIT_HIT"
+                                prev_bobber_x = bobber_x
 
-                        # Continuous Sweep: Quet doan duong phao di chuyen giua 2 frame
-                        # Neu phao di chuyen nhanh nhay qua o vang hep (5-10px) giua 2 frame van bat trung 100%
-                        if prev_bobber_x is not None:
-                            move_min = min(prev_bobber_x, bobber_x)
-                            move_max = max(prev_bobber_x, bobber_x)
-                            crossed = max(move_min, ystart) <= min(move_max, yend)
-                        else:
-                            crossed = False
+                    # -----------------------------------------------------------------
+                    # PHA 2: WAIT_HIT - O vang da khoa, theo doi phao do de bam Hoan Hao
+                    # -----------------------------------------------------------------
+                    elif slider_phase == "WAIT_HIT":
+                        if locked_yellow is None:
+                            slider_phase = "SEARCH_BOX"
+                            continue
 
-                        if inside or crossed:
-                            if not tapped_in_current_pass and (cur_t - last_hit_time > 0.28):
+                        l_start, l_end = locked_yellow
+
+                        # Neu frame hien tai quet duoc o vang o cung vi tri,
+                        # cap nhat mo rong bien do de giu do rong lon nhat (tranh bi teo nho khi phao de len)
+                        if yellow_range is not None:
+                            c_start, c_end = yellow_range
+                            c_center = (c_start + c_end) / 2
+                            l_center = (l_start + l_end) / 2
+                            if abs(c_center - l_center) < 30:
+                                locked_yellow = (min(l_start, c_start), max(l_end, c_end))
+                                l_start, l_end = locked_yellow
+
+                        y_width = l_end - l_start
+
+                        if bobber_x is not None:
+                            # Kiem tra truc tiep: Phao nam trong o vang da khoa
+                            inside = (l_start <= bobber_x <= l_end)
+
+                            # Continuous Sweep: Quet doan duong di chuyen giua 2 frame (gioi han buoc nhay <= 35px)
+                            if prev_bobber_x is not None and abs(bobber_x - prev_bobber_x) <= 35:
+                                move_min = min(prev_bobber_x, bobber_x)
+                                move_max = max(prev_bobber_x, bobber_x)
+                                crossed = max(move_min, l_start) <= min(move_max, l_end)
+                            else:
+                                crossed = False
+
+                            if inside or crossed:
                                 fast_tap(btn_screen_x, btn_screen_y)
                                 hit_count += 1
-                                log(f"  -> [HOAN HAO #{hit_count}] Phao ({bobber_x}) trung o vang [{ystart}, {yend}] (Rong: {y_width}px)")
                                 last_hit_time = cur_t
-                                tapped_in_current_pass = True
-                                target_yellow = None
+                                log(f"  -> [HOAN HAO #{hit_count}] Phao ({bobber_x}) trung o vang [{l_start}, {l_end}] (Rong: {y_width}px)")
+                                # Reset ngay lap tuc de chuyen sang Pha 1 cho o vang tiep theo
+                                locked_yellow = None
                                 prev_bobber_x = None
-                        elif (bobber_x < ystart - 6) or (bobber_x > yend + 6):
-                            # Phao da di han ra ngoai bien do vang -> Mo khoa cho luot tiep theo
-                            tapped_in_current_pass = False
+                                slider_phase = "SEARCH_BOX"
+                                continue
 
-                        prev_bobber_x = bobber_x
+                            prev_bobber_x = bobber_x
 
                 # Thoat minigame som do ESC
                 if _stop_event.is_set():
@@ -778,29 +870,42 @@ def main():
             # BUOC 4: NHAN QUA / DONG POPUP (CLAIM_REWARD)
             # =========================================================
             elif state == "CLAIM_REWARD":
-                log("[4/4] Cho hoat anh ca (0.8s)...")
-                if sleep_check(0.8):
+                log("[4/4] Cho hoat anh ca (0.6s)...")
+                if sleep_check(0.6):
                     continue
 
                 # Nhip 1: Cham truc tiep vao tam the (Rel Y = 0.480) de dong the "Ky Luc Doi Moi", "Ca Moi"
                 touch_tap(card_screen_x, card_screen_y, desc="Dong the ky luc (Nhip 1)")
-
-                if sleep_check(0.4):
+                if sleep_check(0.35):
                     continue
 
                 # Nhip 2: Cham nut "Nhan Ngay" (Rel Y = 0.870) cua man hinh ca thuong
                 touch_tap(claim_screen_x, claim_screen_y, desc="Nhan Ngay (Nhip 2)")
-
-                if sleep_check(0.4):
+                if sleep_check(0.35):
                     continue
 
-                # Nhip 3: Xac nhan dong hoan toan popup ton du
-                touch_tap(claim_screen_x, claim_screen_y, desc="Xac nhan dong (Nhip 3)")
+                # Nhip 3: Xac nhan dong - neu nut Nhan Ngay van con thi bam tiep den khi dong han
+                for retry in range(3):
+                    claim_bgr = safe_grab(sct, claim_box)
+                    if claim_bgr is not None:
+                        c_hsv = cv2.cvtColor(claim_bgr, cv2.COLOR_BGR2HSV)
+                        c_green = cv2.inRange(
+                            c_hsv,
+                            np.array(config.HSV_READY_GREEN_LOWER, dtype=np.uint8),
+                            np.array(config.HSV_READY_GREEN_UPPER, dtype=np.uint8),
+                        )
+                        if np.count_nonzero(c_green) > 300:
+                            log(f"  -> Popup van con ({np.count_nonzero(c_green)}px xanh), bam tiep lan {retry + 1}...")
+                            touch_tap(claim_screen_x, claim_screen_y, desc="Nhan Ngay bo sung")
+                            if sleep_check(0.35):
+                                break
+                        else:
+                            break
 
                 fish_count += 1
                 log(f"[4/4] Nhan thuong thanh cong! Ca thu: {fish_count}")
 
-                if sleep_check(0.6):
+                if sleep_check(0.4):
                     continue
 
                 state = "READY_TO_CAST"
