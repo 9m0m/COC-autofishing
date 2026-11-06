@@ -10,7 +10,7 @@ Co che dieu khien:
    - Toi / Popup: Nhan thuong tai toa do an toan (Rel Y = 0.870).
 2. Quet minigame thanh truot toc do cao (100+ FPS) bang MSS + OpenCV.
 3. Tu dong bu tru vien cua so va thanh cong cu theo tung gia lap.
-4. Nhan Q de BAT / RESUME | Nhan ESC de TAM DUNG (nhan tiep de THOAT).
+4. Nhan Ctrl+Q de BAT / RESUME | Nhan ESC de TAM DUNG (nhan tiep de THOAT).
 """
 
 import sys
@@ -427,7 +427,7 @@ def main():
     print("   COC-AUTOFISHING V12.4")
     print("=" * 50)
     print("Ho tro: BlueStacks 5, LDPlayer 9, Nox, MuMu, MEmu")
-    print("[PHIM TAT] Q = BAT / RESUME | ESC = TAM DUNG (Nhan ESC lan 2 de Thoat)")
+    print("[PHIM TAT] Ctrl+Q = BAT / RESUME | ESC = TAM DUNG (Nhan ESC lan 2 de Thoat)")
     print("-" * 50)
 
     # Tim gia lap
@@ -513,25 +513,26 @@ def main():
                 _stop_event.clear()
 
                 # Doi nguoi dung nha cac phim dang giu
-                while keyboard.is_pressed("q") or keyboard.is_pressed("space") or keyboard.is_pressed("esc"):
+                while keyboard.is_pressed("esc") or keyboard.is_pressed("ctrl+q") or (keyboard.is_pressed("ctrl") and keyboard.is_pressed("q")):
                     time.sleep(0.05)
 
                 if last_heartbeat == 0:
                     print("-" * 50)
                     log("[CHO LENH] Mo su kien Cau ca tren gia lap.")
-                    log("[CHO LENH] Nhan Q (hoac Space) de BAT DAU | Nhan ESC de THOAT...")
+                    log("[CHO LENH] Nhan Ctrl+Q de BAT DAU | Nhan ESC de THOAT...")
                     print("-" * 50)
                 else:
                     print("-" * 50)
                     log("[TAM DUNG] Da tam dung auto. Chuot da duoc giai phong!")
                     log(f"[TAM DUNG] Tong so ca da cau: {fish_count}")
-                    log("[CHO LENH] Nhan Q (hoac Space) de TIEP TUC (Resume)...")
+                    log("[CHO LENH] Nhan Ctrl+Q de TIEP TUC (Resume)...")
                     log("[CHO LENH] Nhan ESC de THOAT HAN tool...")
                     print("-" * 50)
 
                 should_exit = False
                 while True:
-                    if keyboard.is_pressed("q") or keyboard.is_pressed("space"):
+                    # Chi tiep tuc khi bam to hop phim an toan Ctrl+Q (tranh bi bam nham khi chat Zalo/Word/Discord)
+                    if keyboard.is_pressed("ctrl+q") or (keyboard.is_pressed("ctrl") and keyboard.is_pressed("q")):
                         break
                     if keyboard.is_pressed("esc"):
                         should_exit = True
@@ -543,7 +544,7 @@ def main():
                     break
 
                 # Debounce phim truoc khi vao lai vong lap
-                while keyboard.is_pressed("q") or keyboard.is_pressed("space"):
+                while keyboard.is_pressed("ctrl") or keyboard.is_pressed("q"):
                     time.sleep(0.05)
                 time.sleep(0.2)
 
