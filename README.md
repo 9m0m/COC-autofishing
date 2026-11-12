@@ -1,6 +1,13 @@
-# COC-autofishing (Auto Câu Cá Clash of Critters)
+# Bộ Công Cụ Tự Động Clash of Critters (COC-AutoTools)
 
-Công cụ tự động câu cá độ chính xác cao cho sự kiện Câu cá trong game **Clash of Critters** trên các trình giả lập Android phổ biến (BlueStacks 5, LDPlayer 9, NoxPlayer, MuMu Player, MEmu).
+Kho công cụ tự động hóa độ chính xác cao cho game **Clash of Critters** trên các trình giả lập Android phổ biến (BlueStacks 5, LDPlayer 9 / 5 / 4, MuMu Player, NoxPlayer, MEmu):
+
+1. **Auto Câu Cá (Fishing Minigame)**: Tự động giật cần, khóa cứng ô vàng siêu nhỏ 2-pha, tự giải phóng thẻ bài và nhận quà (chi tiết xem bên dưới).
+2. **Auto Rally Sa Hải Mê Thành (Gold Rush)**: Tự động quét và tham gia các cuộc Tổng Tấn Công trên Tổng Mapview, tự đóng popup và nhận thưởng (chi tiết xem riêng tại: **[HUONG_DAN_RALLY.md](HUONG_DAN_RALLY.md)**).
+
+---
+
+## PHẦN 1: AUTO CÂU CÁ (COC-autofishing)
 
 ---
 
@@ -50,8 +57,31 @@ Công cụ tự động câu cá độ chính xác cao cho sự kiện Câu cá 
 
 ### Bước 2: Tải file chạy Auto về máy
 1. Tải bản chạy sẵn mới nhất (chỉ duy nhất 1 file `.exe`, không cần cài thêm Python hay bất kỳ thư viện nào):
-   > **[Nhấn vào đây để tải file auto_cauca.exe tại GitHub Releases](https://github.com/9m0m/COC-autofishing/releases/latest)**
-2. Đặt file `auto_cauca.exe` ở vị trí thuận tiện trên máy tính (ví dụ: Desktop).
+   - **Auto Câu Cá**: Chạy file `dist/auto_cauca.exe` hoặc click `run_auto.bat`.
+   - **Auto Rally Sa Hải Mê Thành**: Chạy file `dist/auto_rally.exe` hoặc click `run_rally.bat`.
+2. Đặt file chạy ở vị trí thuận tiện trên máy tính (ví dụ: Desktop).
+
+---
+
+## ⚡ Hướng dẫn sử dụng Auto Rally (Sa Hải Mê Thành - Gold Rush)
+
+1. **Khởi động game & giả lập**:
+   - Mở game *Clash of Critters* trên BlueStacks 5, LDPlayer, MuMu, Nox hoặc MEmu.
+   - Bạn có thể để màn hình ở:
+     - **Kênh Chat Phe Vàng** (Khuyên dùng: gom 100% rally toàn map).
+     - Hoặc **Mapview Sa Hải Mê Thành** (Quét trực tiếp các ô Tổng Tấn Công chưa tham gia).
+2. **Khởi chạy Auto**:
+   - Chạy file `dist\auto_rally.exe` hoặc click đúp vào `run_rally.bat`.
+   - Tool tự động nhận diện cửa sổ giả lập và tính toán viewport chuẩn xác.
+3. **Cơ chế hoạt động**:
+   - Khi có người mở Rally $\rightarrow$ Tool bấm "Tham gia".
+   - Popup "Đơn Vị Tiêu Chuẩn / Xung Kích" hiện lên $\rightarrow$ Tool bấm nút xanh "Tham gia" ở đáy $\rightarrow$ Chờ chuyển sang "Chờ chấp thuận / Đã tham gia" $\rightarrow$ **Tự động click nút Back nhỏ $\hookleftarrow$** ở góc dưới bên trái để hạ popup về lại Mapview.
+   - Khi kết thúc 5 phút đếm ngược $\rightarrow$ Tool tự động click nút "Xác Nhận" màu xanh để nhận quà (50 lon nước thể lực) và đóng bảng.
+4. **Phím tắt điều khiển**:
+   - **`Ctrl + Q`**: BẬT / TẠM DỪNG bot.
+   - **`ESC`**: DỪNG và THOÁT hoàn toàn.
+
+---
 
 ### Bước 3: Mở game và vào màn hình câu cá
 1. Khởi động game Clash of Critters trên giả lập.
