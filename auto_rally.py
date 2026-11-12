@@ -247,8 +247,16 @@ def scan_and_join_map_rallies(sct: mss.MSS, vp: Tuple[int, int, int, int]) -> bo
         log(f"[MAPVIEW] Phat hien Rally tai ({click_x}, {click_y}) -> Mo Popup")
         touch_tap(click_x, click_y)
         _sleep(config.RALLY_DELAY_AFTER_MAP_CLICK)
-        return True
-    return False
+
+        # 1. Neu la o co nhieu cuoc Rally -> Click chon cuoc dau tien
+        handle_multi_rally_selection(sct, vp)
+
+        # 2. Xu ly Popup chi tiet Rally (Tham gia hoac Back nho de ve Mapview)
+        is_pop, is_join = handle_rally_detail_popup(sct, vp)
+        if is_pop:
+            return "JOINED" if is_join else "FULL"
+        return "CLICKED"
+    return None
 
 
 def scan_and_join_chat_rallies(sct: mss.MSS, vp: Tuple[int, int, int, int]) -> bool:
@@ -350,7 +358,16 @@ def main():
                     _sleep(0.4)
                     continue
 
-                # 2. Kiem tra popup chi tiet Rally (tham gia / dong popup)
+                # 2. Quet Tong Mapview va xu ly Rally truc tiep (Trong tam 100%)
+                map_res = scan_and_join_map_rallies(sct, vp)
+                if map_res:
+                    if map_res == "JOINED":
+                        rally_join_count += 1
+                        log(f"[RALLY] Tham gia thanh cong #{rally_join_count}")
+                    _sleep(0.4)
+                    continue
+
+                # 3. Kiem tra popup ton dong (chi kich hoat neu dung nut popup that >= 2500px)
                 is_popup, is_joined = handle_rally_detail_popup(sct, vp)
                 if is_popup:
                     if is_joined:
@@ -359,17 +376,7 @@ def main():
                     _sleep(0.4)
                     continue
 
-                # 3. Kiem tra popup danh sach nhieu cuoc Rally tren cung 1 o
-                if handle_multi_rally_selection(sct, vp):
-                    _sleep(0.4)
-                    continue
-
-                # 4. Quet Tong Mapview (Trong tam 100%)
-                if scan_and_join_map_rallies(sct, vp):
-                    _sleep(0.4)
-                    continue
-
-                # 5. Quet tin nhan Chat Phe Vang (Chi khi duoc bat trong config)
+                # 4. Quet tin nhan Chat Phe Vang (Chi khi duoc bat trong config)
                 if getattr(config, "RALLY_ENABLE_CHAT_SCAN", False):
                     if scan_and_join_chat_rallies(sct, vp):
                         _sleep(0.4)

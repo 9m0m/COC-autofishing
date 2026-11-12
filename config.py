@@ -89,12 +89,12 @@ MINIGAME_MAX_DURATION: int = 45
 # ==============================================================================
 # A. Toạ độ tỉ lệ trong Popup Chi Tiết Rally ("Đơn Vị Tiêu Chuẩn / Xung Kích")
 # Tâm nút lớn "Tham gia" ở đáy màn hình
-RALLY_POPUP_JOIN_X: float = 0.575
-RALLY_POPUP_JOIN_Y: float = 0.935
+RALLY_POPUP_JOIN_X: float = 0.580
+RALLY_POPUP_JOIN_Y: float = 0.940
 
-# Tâm nút Back nhỏ kế bên nút tham gia (góc dưới bên trái) để đóng popup về Mapview
-RALLY_POPUP_BACK_X: float = 0.105
-RALLY_POPUP_BACK_Y: float = 0.935
+# Tâm nút Back nhỏ kế bên nút tham gia (góc dưới bên trái) để đóng popup về Mapview (tránh xa nút X ở giữa)
+RALLY_POPUP_BACK_X: float = 0.085
+RALLY_POPUP_BACK_Y: float = 0.940
 
 # Vùng kiểm tra nút lớn ở đáy popup: (Rel X: 0.20 -> 0.95, Rel Y: 0.90 -> 0.97)
 RALLY_MAIN_BTN_REL_X_MIN: float = 0.200
@@ -125,16 +125,16 @@ CHAT_SCROLL_BOTTOM_X: float = 0.915
 CHAT_SCROLL_BOTTOM_Y: float = 0.772
 
 # D. Dải màu & ngưỡng nhận diện cho Rally
-# Nút "Tham gia" màu xanh lá
+# Nút "Tham gia" màu xanh lá (Nút thật có > 12.000 px, ngưỡng 2500 loại bỏ 100% icon Mapview)
 HSV_RALLY_GREEN_LOWER = [35, 70, 70]
 HSV_RALLY_GREEN_UPPER = [85, 255, 255]
-RALLY_GREEN_PX_THRESHOLD: int = 350
+RALLY_GREEN_PX_THRESHOLD: int = 2500
 
-# Nút xám "Chờ chấp thuận" / "Đã tham gia" / "Đã đầy" (Saturation thấp, Value trung bình)
+# Nút xám "Chờ chấp thuận" / "Đã tham gia" / "Đã đầy" (Nút thật có > 11.000 px, ngưỡng 2500 loại bỏ 100% bóng mờ Mapview)
 RALLY_GREY_SAT_MAX: int = 50
 RALLY_GREY_VAL_MIN: int = 70
 RALLY_GREY_VAL_MAX: int = 210
-RALLY_GREY_PX_THRESHOLD: int = 400
+RALLY_GREY_PX_THRESHOLD: int = 2500
 
 # Dòng chữ xanh lá "Đã tham gia" trên avatar ở Map
 HSV_RALLY_JOINED_GREEN_LOWER = [35, 90, 90]
