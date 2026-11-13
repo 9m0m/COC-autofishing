@@ -139,7 +139,12 @@ RALLY_GREY_PX_THRESHOLD: int = 2500
 # Dòng chữ xanh lá "Đã tham gia" trên avatar ở Map
 HSV_RALLY_JOINED_GREEN_LOWER = [35, 90, 90]
 HSV_RALLY_JOINED_GREEN_UPPER = [85, 255, 255]
-RALLY_JOINED_PX_THRESHOLD: int = 60
+RALLY_JOINED_PX_THRESHOLD: int = 150
+
+# Ngưỡng nhận diện Template Matching tiêu đề 'Tổng Tấn Công!' trên Mapview
+# (Giá trị thật: 0.80 - 0.98. Khung cảnh map không có Rally tối đa chỉ đạt 0.49. Ngưỡng 0.66 bắt nhạy 100% không bắt nhầm)
+RALLY_MATCH_THRESHOLD: float = 0.66
+RALLY_SCALE_FACTORS = [1.00, 0.96, 1.04, 0.92, 1.08, 0.88, 1.12]
 
 # E. Cấu hình thời gian chờ (Delays - Đơn vị: Giây)
 # Thời gian giữ phím chuột (chạm cảm ứng Android an toàn)

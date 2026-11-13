@@ -260,12 +260,50 @@ def grab_roi(
     return crop, (abs_x1, abs_y1, width, height)
 
 
-def touch_tap(x: int, y: int, desc: str = "", hold_sec: float = 0.08) -> None:
-    """Mô phỏng thao tác chạm cảm ứng Android trực tiếp qua Win32 API."""
+def activate_window(hwnd: int) -> None:
+    """Kích hoạt và đưa cửa sổ giả lập lên phía trước để nhận tương tác mượt mà."""
+    try:
+        if hwnd and user32.GetForegroundWindow() != hwnd:
+            cur_tid = kernel32.GetCurrentThreadId()
+            fore_hwnd = user32.GetForegroundWindow()
+            fore_tid = user32.GetWindowThreadProcessId(fore_hwnd, None)
+            if fore_tid and fore_tid != cur_tid:
+                user32.AttachThreadInput(cur_tid, fore_tid, True)
+                user32.ShowWindow(hwnd, 9)  # SW_RESTORE
+                user32.SetForegroundWindow(hwnd)
+                user32.AttachThreadInput(cur_tid, fore_tid, False)
+            else:
+                user32.ShowWindow(hwnd, 9)
+                user32.SetForegroundWindow(hwnd)
+            time.sleep(0.04)
+    except Exception:
+        pass
+
+
+def touch_tap(x: int, y: int, desc: str = "", hold_sec: float = 0.08, restore_cursor: bool = True) -> None:
+    """
+    Mô phỏng thao tác chạm cảm ứng Android trực tiếp qua Win32 API.
+    Hỗ trợ 2 màn hình: tự động lưu và trả chuột về vị trí cũ trên màn hình chính
+    để người dùng tiếp tục lướt web/xem video mà không bị giật chuột.
+    """
     x, y = int(x), int(y)
     if desc:
         log(f"-> {desc} ({x}, {y})")
+
+    orig_pt = wintypes.POINT()
+    saved = False
+    if restore_cursor:
+        try:
+            user32.GetCursorPos(ctypes.byref(orig_pt))
+            saved = True
+        except Exception:
+            pass
+
     user32.SetCursorPos(x, y)
     user32.mouse_event(0x0002, 0, 0, 0, 0)  # MOUSEEVENTF_LEFTDOWN
     time.sleep(hold_sec)
     user32.mouse_event(0x0004, 0, 0, 0, 0)  # MOUSEEVENTF_LEFTUP
+
+    if saved and (orig_pt.x != x or orig_pt.y != y):
+        time.sleep(0.02)
+        user32.SetCursorPos(orig_pt.x, orig_pt.y)

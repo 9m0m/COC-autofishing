@@ -25,6 +25,7 @@ from emulator import (
     get_game_viewport,
     safe_grab,
     touch_tap,
+    activate_window,
     user32,
 )
 
@@ -72,7 +73,7 @@ def _find_green_buttons(crop: np.ndarray, min_w_ratio: float = 0.20) -> List[Tup
     return buttons
 
 
-def check_and_claim_reward(sct: mss.MSS, vp: Tuple[int, int, int, int]) -> bool:
+def check_and_claim_reward(sct: mss.MSS, vp: Tuple[int, int, int, int], hwnd: Optional[int] = None) -> bool:
     """Kiem tra va bam 'Xac Nhan' nhan qua sau khi tran Rally ket thuc."""
     gw_l, gw_t, gw_w, gw_h = vp
     x1 = int(gw_l + gw_w * config.RALLY_REWARD_BTN_REL_X_MIN)
@@ -91,6 +92,8 @@ def check_and_claim_reward(sct: mss.MSS, vp: Tuple[int, int, int, int]) -> bool:
         np.array(config.HSV_RALLY_GREEN_UPPER, dtype=np.uint8),
     )
     if int(np.count_nonzero(mask)) > 300:
+        if hwnd:
+            activate_window(hwnd)
         cx = int(gw_l + gw_w * config.RALLY_CLAIM_REWARD_X)
         cy = int(gw_t + gw_h * config.RALLY_CLAIM_REWARD_Y)
         touch_tap(cx, cy)
@@ -178,10 +181,10 @@ def handle_multi_rally_selection(sct: mss.MSS, vp: Tuple[int, int, int, int]) ->
     return False
 
 
-def scan_and_join_map_rallies(sct: mss.MSS, vp: Tuple[int, int, int, int]) -> bool:
+def scan_and_join_map_rallies(sct: mss.MSS, vp: Tuple[int, int, int, int], hwnd: Optional[int] = None) -> Optional[str]:
     """
     Quet Tong Mapview tim tieu de 'Tong Tan Cong!' qua Template Matching da ty le.
-    Chi click vao cac o Rally that (do khop >= 0.72) va bo qua icon Mang Ha Guc.
+    Ho tro luoi ty le mo rong (0.88 -> 1.12) va nguong 0.66 de bat nhay 100% tren moi do phan giai.
     """
     global _last_clicked_tile, _full_tiles_cooldown, _recently_joined_tiles
     gw_l, gw_t, gw_w, gw_h = vp
@@ -194,12 +197,14 @@ def scan_and_join_map_rallies(sct: mss.MSS, vp: Tuple[int, int, int, int]) -> bo
     my2 = int(gw_t + gw_h * 0.82)
     map_crop = safe_grab(sct, {"left": gw_l, "top": my1, "width": gw_w, "height": my2 - my1})
     if map_crop is None:
-        return False
+        return None
 
     scale = gw_w / 415.0
     matches = []
+    scale_factors = getattr(config, "RALLY_SCALE_FACTORS", [1.00, 0.96, 1.04, 0.92, 1.08, 0.88, 1.12])
+    match_thresh = getattr(config, "RALLY_MATCH_THRESHOLD", 0.66)
 
-    for factor in (1.0, 0.94, 1.06):
+    for factor in scale_factors:
         cur_sc = scale * factor
         cur_tw = max(10, int(_template_tw * cur_sc))
         cur_th = max(10, int(_template_th * cur_sc))
@@ -210,7 +215,7 @@ def scan_and_join_map_rallies(sct: mss.MSS, vp: Tuple[int, int, int, int]) -> bo
         )
 
         res = cv2.matchTemplate(map_crop, scaled_temp, cv2.TM_CCOEFF_NORMED)
-        locs = np.where(res >= 0.72)
+        locs = np.where(res >= match_thresh)
         for pt in zip(*locs[::-1]):
             x, y = int(pt[0]), int(pt[1])
             if not any(abs(m[0] - x) < cur_tw * 0.6 and abs(m[1] - y) < cur_th * 0.6 for m in matches):
@@ -239,12 +244,19 @@ def scan_and_join_map_rallies(sct: mss.MSS, vp: Tuple[int, int, int, int]) -> bo
                 np.array(config.HSV_RALLY_JOINED_GREEN_LOWER, dtype=np.uint8),
                 np.array(config.HSV_RALLY_JOINED_GREEN_UPPER, dtype=np.uint8),
             )
-            if int(np.count_nonzero(joined_mask)) >= config.RALLY_JOINED_PX_THRESHOLD:
+            joined_px = int(np.count_nonzero(joined_mask))
+            if joined_px >= config.RALLY_JOINED_PX_THRESHOLD:
+                log(f"[MAPVIEW] O ({click_x}, {click_y}) da co huy hieu 'Da tham gia' ({joined_px}px) -> Bo qua")
                 _recently_joined_tiles[tile] = time.time() + 240.0
                 continue
 
         _last_clicked_tile = tile
         log(f"[MAPVIEW] Phat hien Rally tai ({click_x}, {click_y}) -> Mo Popup")
+
+        # Kich hoat cua so gia lap tren man hinh phu de nhan click ngay lap tuc
+        if hwnd:
+            activate_window(hwnd)
+
         touch_tap(click_x, click_y)
         _sleep(config.RALLY_DELAY_AFTER_MAP_CLICK)
 
@@ -302,7 +314,11 @@ def main():
     def on_toggle_pause():
         global _is_paused
         _is_paused = not _is_paused
-        log(f"[HOTKEY] {'[TAM DUNG] Da tam dung bot' if _is_paused else '[DANG CHAY] Bat dau quet Mapview'}")
+        if not _is_paused:
+            log("[HOTKEY] [DANG CHAY] Bat dau quet Mapview")
+            activate_window(hwnd)
+        else:
+            log("[HOTKEY] [TAM DUNG] Da tam dung bot")
 
     def on_stop():
         log("[HOTKEY] Da bam ESC -> Dang dung bot...")
@@ -352,14 +368,14 @@ def main():
                 vp = (gw_left, gw_top, gw_w, gw_h)
 
                 # 1. Kiem tra nhan thuong ket thuc Rally
-                if check_and_claim_reward(sct, vp):
+                if check_and_claim_reward(sct, vp, hwnd):
                     reward_count += 1
                     log(f"[REWARD] Nhan thuong Rally #{reward_count}")
                     _sleep(0.4)
                     continue
 
                 # 2. Quet Tong Mapview va xu ly Rally truc tiep (Trong tam 100%)
-                map_res = scan_and_join_map_rallies(sct, vp)
+                map_res = scan_and_join_map_rallies(sct, vp, hwnd)
                 if map_res:
                     if map_res == "JOINED":
                         rally_join_count += 1
