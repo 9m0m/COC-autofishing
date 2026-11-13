@@ -38,6 +38,7 @@ _is_paused = True
 _last_clicked_tile: Optional[Tuple[int, int]] = None
 _full_tiles_cooldown: Dict[Tuple[int, int], float] = {}
 _recently_joined_tiles: Dict[Tuple[int, int], float] = {}
+_last_best_score: float = 0.0
 
 # Template tieu de 'Tong Tan Cong!' tren Mapview
 _rally_template = assets.get_rally_template()
@@ -186,7 +187,7 @@ def scan_and_join_map_rallies(sct: mss.MSS, vp: Tuple[int, int, int, int], hwnd:
     Quet Tong Mapview tim tieu de 'Tong Tan Cong!' qua Template Matching da ty le.
     Ho tro luoi ty le mo rong (0.88 -> 1.12) va nguong 0.66 de bat nhay 100% tren moi do phan giai.
     """
-    global _last_clicked_tile, _full_tiles_cooldown, _recently_joined_tiles
+    global _last_clicked_tile, _full_tiles_cooldown, _recently_joined_tiles, _last_best_score
     gw_l, gw_t, gw_w, gw_h = vp
 
     now = time.time()
@@ -204,6 +205,7 @@ def scan_and_join_map_rallies(sct: mss.MSS, vp: Tuple[int, int, int, int], hwnd:
     scale_factors = getattr(config, "RALLY_SCALE_FACTORS", [1.00, 0.96, 1.04, 0.92, 1.08, 0.88, 1.12])
     match_thresh = getattr(config, "RALLY_MATCH_THRESHOLD", 0.66)
 
+    best_val = 0.0
     for factor in scale_factors:
         cur_sc = scale * factor
         cur_tw = max(10, int(_template_tw * cur_sc))
@@ -215,6 +217,10 @@ def scan_and_join_map_rallies(sct: mss.MSS, vp: Tuple[int, int, int, int], hwnd:
         )
 
         res = cv2.matchTemplate(map_crop, scaled_temp, cv2.TM_CCOEFF_NORMED)
+        min_v, max_v, _, _ = cv2.minMaxLoc(res)
+        if max_v > best_val:
+            best_val = float(max_v)
+
         locs = np.where(res >= match_thresh)
         for pt in zip(*locs[::-1]):
             x, y = int(pt[0]), int(pt[1])
@@ -222,6 +228,8 @@ def scan_and_join_map_rallies(sct: mss.MSS, vp: Tuple[int, int, int, int], hwnd:
                 matches.append((x, y, cur_tw, cur_th))
         if matches:
             break
+
+    _last_best_score = best_val
 
     for x, y, cur_tw, cur_th in matches:
         click_x = int(gw_l + x + cur_tw // 2)
@@ -356,8 +364,8 @@ def main():
 
             try:
                 cur_t = time.time()
-                if cur_t - last_heartbeat >= 25.0:
-                    log(f"[STATUS] Dang quet Mapview | Da tham gia: {rally_join_count} | Nhan qua: {reward_count}")
+                if cur_t - last_heartbeat >= 20.0:
+                    log(f"[STATUS] Dang quet Mapview (Do khop: {_last_best_score:.2f}) | Da tham gia: {rally_join_count} | Nhan qua: {reward_count}")
                     last_heartbeat = cur_t
 
                 if not user32.IsIconic(hwnd):
