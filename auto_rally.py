@@ -39,9 +39,77 @@ _last_clicked_tile: Optional[Tuple[int, int]] = None
 _full_tiles_cooldown: Dict[Tuple[int, int], float] = {}
 _recently_joined_tiles: Dict[Tuple[int, int], float] = {}
 _last_best_score: float = 0.0
+_effective_vp: Optional[Tuple[int, int, int, int]] = None
+_last_raw_vp: Optional[Tuple[int, int, int, int]] = None
+_last_pillarbox_check: float = 0.0
 
 # He thong Template tieu de 'Tong Tan Cong!' cho 4 phe dia hinh (Vang, Xanh, Do, Tim) tren Mapview
 _rally_templates = assets.get_rally_templates()
+
+
+def detect_pillarbox(crop: np.ndarray, black_thresh: Optional[float] = None, min_margin: Optional[int] = None) -> Tuple[int, int]:
+    """
+    Xac dinh do rong dai den (pillarbox) hai ben mep cua so neu bi keo dan ngang.
+    Tra ve: (offset_x, real_w) tinh theo pixel trong crop.
+    """
+    if crop is None or crop.size == 0:
+        return 0, 0
+    if black_thresh is None:
+        black_thresh = getattr(config, "PILLARBOX_BLACK_THRESHOLD", 12.0)
+    if min_margin is None:
+        min_margin = getattr(config, "PILLARBOX_MIN_MARGIN", 10)
+
+    h, w = crop.shape[:2]
+    # Lay 60% dai giua theo chieu doc de tranh cac thanh tieu de/tab/thanh dieu huong
+    mid_crop = crop[int(h * 0.20):int(h * 0.80), :]
+    gray = cv2.cvtColor(mid_crop, cv2.COLOR_BGR2GRAY)
+    col_means = np.mean(gray, axis=0)
+
+    non_black = np.where(col_means > black_thresh)[0]
+    if len(non_black) == 0:
+        return 0, w
+
+    left_margin = int(non_black[0])
+    right_margin = int(w - 1 - non_black[-1])
+
+    offset_x = left_margin if left_margin >= min_margin else 0
+    right_offset = right_margin if right_margin >= min_margin else 0
+    if offset_x + right_offset >= w:
+        return 0, w
+
+    real_w = max(10, w - offset_x - right_offset)
+    return offset_x, real_w
+
+
+def get_effective_viewport(sct: mss.MSS, raw_vp: Tuple[int, int, int, int], force_check: bool = False) -> Tuple[int, int, int, int]:
+    """
+    Lay toa do viewport thuc te cua game sau khi loai tru dai den hai ben suon (Pillarbox).
+    Neu cua so bi keo dan ngang hon ty le 9:16 cua mobile, ham se thu hep ve dung vung game.
+    """
+    global _effective_vp, _last_raw_vp, _last_pillarbox_check
+    now = time.time()
+    if not force_check and _effective_vp is not None and raw_vp == _last_raw_vp and (now - _last_pillarbox_check < 10.0):
+        return _effective_vp
+
+    gw_l, gw_t, gw_w, gw_h = raw_vp
+    _last_raw_vp = raw_vp
+    _last_pillarbox_check = now
+
+    # Lay mau dai giua man hinh de kiem tra dai den
+    sample_y = int(gw_t + gw_h * 0.35)
+    sample_h = max(10, int(gw_h * 0.30))
+    sample = safe_grab(sct, {"left": gw_l, "top": sample_y, "width": gw_w, "height": sample_h})
+    if sample is None:
+        _effective_vp = raw_vp
+        return raw_vp
+
+    offset_x, real_w = detect_pillarbox(sample)
+    if offset_x > 0 or real_w < gw_w:
+        _effective_vp = (gw_l + offset_x, gw_t, real_w, gw_h)
+        log(f"[PILLARBOX] Phat hien dai den: Le trai {offset_x}px, Rong thuc {real_w}px (Viewport goc {gw_w}px)")
+    else:
+        _effective_vp = raw_vp
+    return _effective_vp
 
 
 def _sleep(seconds: float) -> bool:
@@ -184,9 +252,9 @@ def handle_multi_rally_selection(sct: mss.MSS, vp: Tuple[int, int, int, int]) ->
 def scan_and_join_map_rallies(sct: mss.MSS, vp: Tuple[int, int, int, int], hwnd: Optional[int] = None) -> Optional[str]:
     """
     Quet Tong Mapview tim tieu de 'Tong Tan Cong!' qua Template Matching da ty le.
-    Ho tro luoi ty le mo rong (0.88 -> 1.12) va nguong 0.66 de bat nhay 100% tren moi do phan giai.
+    Ho tro dai ty le co dinh quanh 1.0 va tu dong loai tru dai den (Pillarbox) hai ben.
     """
-    global _last_clicked_tile, _full_tiles_cooldown, _recently_joined_tiles, _last_best_score
+    global _last_clicked_tile, _full_tiles_cooldown, _recently_joined_tiles, _last_best_score, _effective_vp
     gw_l, gw_t, gw_w, gw_h = vp
 
     now = time.time()
@@ -199,16 +267,23 @@ def scan_and_join_map_rallies(sct: mss.MSS, vp: Tuple[int, int, int, int], hwnd:
     if map_crop is None:
         return None
 
-    scale = gw_w / 415.0
+    # Tu dong loai tru dai den neu map_crop chua vien den hai ben (Pillarbox)
+    off_x, real_w = detect_pillarbox(map_crop)
+    if off_x > 0 or real_w < gw_w:
+        map_crop = map_crop[:, off_x:off_x + real_w]
+        gw_l += off_x
+        gw_w = real_w
+        _effective_vp = (gw_l, gw_t, gw_w, gw_h)
+        vp = _effective_vp
+
     matches = []
-    scale_factors = getattr(config, "RALLY_SCALE_FACTORS", [1.00, 0.96, 1.04, 0.92, 1.08, 0.88, 1.12])
+    scale_factors = getattr(config, "RALLY_SCALE_FACTORS", [1.00, 1.04, 0.96, 1.08, 0.92, 1.12, 0.88])
     match_thresh = getattr(config, "RALLY_MATCH_THRESHOLD", 0.66)
 
     best_val = 0.0
     for tname, tpl in _rally_templates:
         tpl_th, tpl_tw = tpl.shape[:2]
-        for factor in scale_factors:
-            cur_sc = scale * factor
+        for cur_sc in scale_factors:
             cur_tw = max(10, int(tpl_tw * cur_sc))
             cur_th = max(10, int(tpl_th * cur_sc))
             if cur_tw >= map_crop.shape[1] or cur_th >= map_crop.shape[0]:
@@ -347,10 +422,11 @@ def main():
     hwnd = win._hWnd
     win_title = win.title
     gw_left, gw_top, gw_w, gw_h = get_game_viewport(hwnd, win_title)
-    log(f"[KET NOI] {win_title} | Viewport: {gw_w}x{gw_h} tai ({gw_left}, {gw_top})")
+    sct = mss.MSS()
+    eff_vp = get_effective_viewport(sct, (gw_left, gw_top, gw_w, gw_h), force_check=True)
+    log(f"[KET NOI] {win_title} | Viewport: {gw_w}x{gw_h} (Game thuc: {eff_vp[2]}x{eff_vp[3]}) tai ({eff_vp[0]}, {eff_vp[1]})")
     log("[SAN SANG] Trang thai: [TAM DUNG]. Chuyen ve Tong Mapview roi bam [Ctrl+Q] de chay.")
 
-    sct = mss.MSS()
     rally_join_count = 0
     reward_count = 0
     last_heartbeat = time.time()
@@ -375,8 +451,10 @@ def main():
                     nl, nt, nw, nh = get_game_viewport(hwnd, win_title)
                     if (nl, nt, nw, nh) != (gw_left, gw_top, gw_w, gw_h) and nw > 200 and nh > 350:
                         gw_left, gw_top, gw_w, gw_h = nl, nt, nw, nh
+                        global _effective_vp
+                        _effective_vp = None
 
-                vp = (gw_left, gw_top, gw_w, gw_h)
+                vp = get_effective_viewport(sct, (gw_left, gw_top, gw_w, gw_h))
 
                 # 1. Kiem tra nhan thuong ket thuc Rally
                 if check_and_claim_reward(sct, vp, hwnd):

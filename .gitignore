@@ -22,3 +22,7 @@ all_windows.txt
 # Editor / IDE
 .vscode/
 .idea/
+
+# Local Markdown reports (keep only README.md in git)
+*.md
+!README.md
