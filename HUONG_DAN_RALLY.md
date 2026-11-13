@@ -52,17 +52,21 @@ python auto_rally.py
 
 ## 4. Thiết Lập Màn Hình Tối Ưu (Đa Nhiệm / Lướt Web)
 
-Bot sử dụng chuột thật của Windows (`user32.SetCursorPos`) để gửi thao tác chạm cảm ứng. Do đó:
+Bot sử dụng chuột thật của Windows (`user32.SetCursorPos`) để gửi thao tác chạm cảm ứng. Phiên bản mới đã được tích hợp cơ chế **tự động lưu và trả chuột về vị trí cũ**:
+
+### Lưu ý quan trọng cho BlueStacks (Tránh bị khựng hình khi chạy ngầm):
+- **Tắt chế độ Tiết kiệm tài nguyên (Eco Mode)**: Nhấn tổ hợp phím **`Ctrl + Shift + F`** trên BlueStacks hoặc bấm vào biểu tượng công tơ mét trên thanh công cụ bên phải để tắt chế độ tiết kiệm.
+- **Tốc độ khung hình khi chạy ngầm**: Vào Cài đặt BlueStacks -> Hiệu năng (Performance) -> Đảm bảo khung hình đạt 60 FPS để giả lập không tự động giảm xuống 1 FPS khi bạn đang lướt web trên màn hình chính.
 
 ### Thiết lập 2 màn hình (Lý tưởng nhất):
 - Kéo cửa sổ BlueStacks / LDPlayer sang **Màn hình phụ** và mở sẵn màn hình Tổng Mapview.
-- Trên **Màn hình chính**, bạn có thể phóng to toàn màn hình xem YouTube, phim ảnh, lướt web hoặc làm việc thoải mái.
-- Khi có Rally ở Màn hình phụ, con trỏ chuột sẽ tự động di chuyển sang bấm khoảng **1.5 giây** rồi dừng lại. Sau đó bạn rê chuột về Màn hình chính sử dụng tiếp bình thường.
+- Trên **Màn hình chính**, bạn có thể lướt web, làm việc hoặc xem YouTube thoải mái.
+- **Cơ chế tự động trả chuột**: Khi phát hiện có Rally, bot tự động kích hoạt cửa sổ giả lập, di chuyển chuột sang click trong khoảng **1.5 giây**, sau đó **ngay lập tức trả chuột về đúng vị trí cũ trên Màn hình chính** cho bạn tiếp tục làm việc.
 
 ### Thiết lập 1 màn hình:
 - **Chia đôi màn hình**: Trình duyệt để nửa bên trái, giả lập để nửa bên phải.
-- **Không để cửa sổ khác đè lên giả lập**: Bot cần chụp màn hình nhìn thấy bản đồ game để quét.
-- Khi bot đang thực hiện click Rally (~1.5 giây), không giằng chuột lại để tránh click trượt hoặc chạm vào 4 góc màn hình làm kích hoạt ngắt an toàn (`FailSafeException`).
+- **Không để cửa sổ khác che khuất hoàn toàn giả lập**: Bot cần chụp màn hình nhìn thấy bản đồ game để quét.
+- Khi bot đang thực hiện click Rally (~1.5 giây), thả lỏng chuột một thoáng để bot click xong. Tránh giằng chuột vào sát 4 góc viền màn hình để không kích hoạt ngắt an toàn (`FailSafeException`).
 
 ---
 
