@@ -161,8 +161,8 @@ RALLY_DELAY_AFTER_JOIN_CLICK: float = 0.80
 # Thời gian chờ sau khi bấm nút Back nhỏ để đóng popup (đợi hoạt ảnh hạ popup)
 RALLY_DELAY_AFTER_BACK_CLICK: float = 0.70
 
-# Thời gian chờ sau khi bấm "Xác Nhận" nhận quà (đợi đóng bảng kết quả)
-RALLY_DELAY_AFTER_CLAIM_REWARD: float = 0.80
+# Thời gian chờ sau khi bấm "Xác Nhận" nhận quà (chờ hoạt ảnh "Phần Thưởng!" 2s kết thúc và Mapview hiện lại)
+RALLY_DELAY_AFTER_CLAIM_REWARD: float = 2.20
 
 # Thời gian chờ sau khi bấm "Tham gia" trong Chat (đợi game tải và mở popup)
 RALLY_DELAY_AFTER_CHAT_CLICK: float = 0.90
