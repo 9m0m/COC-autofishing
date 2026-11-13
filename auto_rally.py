@@ -40,9 +40,8 @@ _full_tiles_cooldown: Dict[Tuple[int, int], float] = {}
 _recently_joined_tiles: Dict[Tuple[int, int], float] = {}
 _last_best_score: float = 0.0
 
-# Template tieu de 'Tong Tan Cong!' tren Mapview
-_rally_template = assets.get_rally_template()
-_template_th, _template_tw = _rally_template.shape[:2]
+# He thong Template tieu de 'Tong Tan Cong!' cho 4 phe dia hinh (Vang, Xanh, Do, Tim) tren Mapview
+_rally_templates = assets.get_rally_templates()
 
 
 def _sleep(seconds: float) -> bool:
@@ -206,32 +205,36 @@ def scan_and_join_map_rallies(sct: mss.MSS, vp: Tuple[int, int, int, int], hwnd:
     match_thresh = getattr(config, "RALLY_MATCH_THRESHOLD", 0.66)
 
     best_val = 0.0
-    for factor in scale_factors:
-        cur_sc = scale * factor
-        cur_tw = max(10, int(_template_tw * cur_sc))
-        cur_th = max(10, int(_template_th * cur_sc))
-        scaled_temp = cv2.resize(
-            _rally_template,
-            (cur_tw, cur_th),
-            interpolation=cv2.INTER_AREA if cur_sc < 1.0 else cv2.INTER_LINEAR,
-        )
+    for tname, tpl in _rally_templates:
+        tpl_th, tpl_tw = tpl.shape[:2]
+        for factor in scale_factors:
+            cur_sc = scale * factor
+            cur_tw = max(10, int(tpl_tw * cur_sc))
+            cur_th = max(10, int(tpl_th * cur_sc))
+            if cur_tw >= map_crop.shape[1] or cur_th >= map_crop.shape[0]:
+                continue
+            scaled_temp = cv2.resize(
+                tpl,
+                (cur_tw, cur_th),
+                interpolation=cv2.INTER_AREA if cur_sc < 1.0 else cv2.INTER_LINEAR,
+            )
 
-        res = cv2.matchTemplate(map_crop, scaled_temp, cv2.TM_CCOEFF_NORMED)
-        min_v, max_v, _, _ = cv2.minMaxLoc(res)
-        if max_v > best_val:
-            best_val = float(max_v)
+            res = cv2.matchTemplate(map_crop, scaled_temp, cv2.TM_CCOEFF_NORMED)
+            min_v, max_v, _, _ = cv2.minMaxLoc(res)
+            if max_v > best_val:
+                best_val = float(max_v)
 
-        locs = np.where(res >= match_thresh)
-        for pt in zip(*locs[::-1]):
-            x, y = int(pt[0]), int(pt[1])
-            if not any(abs(m[0] - x) < cur_tw * 0.6 and abs(m[1] - y) < cur_th * 0.6 for m in matches):
-                matches.append((x, y, cur_tw, cur_th))
+            locs = np.where(res >= match_thresh)
+            for pt in zip(*locs[::-1]):
+                x, y = int(pt[0]), int(pt[1])
+                if not any(abs(m[0] - x) < cur_tw * 0.6 and abs(m[1] - y) < cur_th * 0.6 for m in matches):
+                    matches.append((x, y, cur_tw, cur_th, tname, float(res[y, x])))
         if matches:
             break
 
     _last_best_score = best_val
 
-    for x, y, cur_tw, cur_th in matches:
+    for x, y, cur_tw, cur_th, faction, score in matches:
         click_x = int(gw_l + x + cur_tw // 2)
         click_y = int(my1 + y + cur_th + int(cur_th * 0.7))
         tile = (click_x, click_y)
@@ -259,7 +262,7 @@ def scan_and_join_map_rallies(sct: mss.MSS, vp: Tuple[int, int, int, int], hwnd:
                 continue
 
         _last_clicked_tile = tile
-        log(f"[MAPVIEW] Phat hien Rally tai ({click_x}, {click_y}) -> Mo Popup")
+        log(f"[MAPVIEW] Phat hien Rally (Phe {faction.capitalize()}) tai ({click_x}, {click_y}) do khop {score:.2f} -> Mo Popup")
 
         # Kich hoat cua so gia lap tren man hinh phu de nhan click ngay lap tuc
         if hwnd:
