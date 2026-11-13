@@ -144,12 +144,12 @@ RALLY_JOINED_PX_THRESHOLD: int = 150
 # Ngưỡng nhận diện Template Matching tiêu đề 'Tổng Tấn Công!' trên Mapview
 # (Giá trị thật: 0.80 - 0.98. Khung cảnh map không có Rally tối đa chỉ đạt 0.49. Ngưỡng 0.66 bắt nhạy 100% không bắt nhầm)
 RALLY_MATCH_THRESHOLD: float = 0.66
-# Dải tỷ lệ quét cố định quanh 1.0 của game mobile dọc (không phụ thuộc việc cửa sổ bị kéo giãn bề ngang)
-RALLY_SCALE_FACTORS = [1.00, 1.04, 0.96, 1.08, 0.92, 1.12, 0.88]
+# Dải tỷ lệ quét đa năng của game mobile dọc (hỗ trợ mọi kích cỡ cửa sổ từ thu nhỏ đến cực đại 1080p/2K)
+RALLY_SCALE_FACTORS = [1.00, 1.04, 0.96, 1.08, 0.92, 1.12, 0.88, 0.80, 0.72, 0.67, 1.20, 1.28]
 
 # E. Cấu hình nhận diện Dải đen (Pillarbox Detection khi cửa sổ bị kéo dãn ngang)
 PILLARBOX_BLACK_THRESHOLD: float = 12.0  # Ngưỡng độ sáng xác định dải đen hai bên sườn
-PILLARBOX_MIN_MARGIN: int = 10           # Độ rộng lề tối thiểu (px) để kích hoạt loại trừ dải đen
+PILLARBOX_MIN_MARGIN: int = 15           # Độ rộng lề tối thiểu (px) để kích hoạt loại trừ dải đen (tránh viền 1px)
 
 # F. Cấu hình thời gian chờ (Delays - Đơn vị: Giây)
 # Thời gian giữ phím chuột (chạm cảm ứng Android an toàn)

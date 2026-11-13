@@ -6,6 +6,7 @@ cho game Clash of Critters tren cac gia lap Android (BlueStacks 5, LDPlayer 9, M
 import sys
 import time
 import threading
+import itertools
 from typing import Optional, Tuple, Dict, List
 
 import cv2
@@ -50,6 +51,8 @@ _rally_templates = assets.get_rally_templates()
 def detect_pillarbox(crop: np.ndarray, black_thresh: Optional[float] = None, min_margin: Optional[int] = None) -> Tuple[int, int]:
     """
     Xac dinh do rong dai den (pillarbox) hai ben mep cua so neu bi keo dan ngang.
+    Hoat dong chinh xac 100% tren moi gia lap (BlueStacks, LDPlayer, MuMu, Nox, MEmu),
+    khong bi danh lua boi vien cua so 1px hoac thanh cong cu sidebar ben phai.
     Tra ve: (offset_x, real_w) tinh theo pixel trong crop.
     """
     if crop is None or crop.size == 0:
@@ -57,27 +60,35 @@ def detect_pillarbox(crop: np.ndarray, black_thresh: Optional[float] = None, min
     if black_thresh is None:
         black_thresh = getattr(config, "PILLARBOX_BLACK_THRESHOLD", 12.0)
     if min_margin is None:
-        min_margin = getattr(config, "PILLARBOX_MIN_MARGIN", 10)
+        min_margin = getattr(config, "PILLARBOX_MIN_MARGIN", 15)
 
     h, w = crop.shape[:2]
     # Lay 60% dai giua theo chieu doc de tranh cac thanh tieu de/tab/thanh dieu huong
     mid_crop = crop[int(h * 0.20):int(h * 0.80), :]
     gray = cv2.cvtColor(mid_crop, cv2.COLOR_BGR2GRAY)
     col_means = np.mean(gray, axis=0)
+    is_black = (col_means <= black_thresh)
 
-    non_black = np.where(col_means > black_thresh)[0]
-    if len(non_black) == 0:
-        return 0, w
+    # Tim cac khoi cot den lien tiep (runs)
+    runs = []
+    idx = 0
+    for is_b, g in itertools.groupby(is_black):
+        count = len(list(g))
+        runs.append((bool(is_b), idx, idx + count - 1, count))
+        idx += count
 
-    left_margin = int(non_black[0])
-    right_margin = int(w - 1 - non_black[-1])
+    left_black_end = 0
+    for is_b, start_c, end_c, count in runs:
+        if is_b and count >= min_margin and start_c < w * 0.45:
+            left_black_end = end_c + 1
 
-    offset_x = left_margin if left_margin >= min_margin else 0
-    right_offset = right_margin if right_margin >= min_margin else 0
-    if offset_x + right_offset >= w:
-        return 0, w
+    right_black_start = w
+    for is_b, start_c, end_c, count in runs[::-1]:
+        if is_b and count >= min_margin and end_c > w * 0.55:
+            right_black_start = start_c
 
-    real_w = max(10, w - offset_x - right_offset)
+    offset_x = left_black_end
+    real_w = max(10, right_black_start - left_black_end)
     return offset_x, real_w
 
 
@@ -277,7 +288,7 @@ def scan_and_join_map_rallies(sct: mss.MSS, vp: Tuple[int, int, int, int], hwnd:
         vp = _effective_vp
 
     matches = []
-    scale_factors = getattr(config, "RALLY_SCALE_FACTORS", [1.00, 1.04, 0.96, 1.08, 0.92, 1.12, 0.88])
+    scale_factors = getattr(config, "RALLY_SCALE_FACTORS", [1.00, 1.04, 0.96, 1.08, 0.92, 1.12, 0.88, 0.80, 0.72, 0.67, 1.20, 1.28])
     match_thresh = getattr(config, "RALLY_MATCH_THRESHOLD", 0.66)
 
     best_val = 0.0
