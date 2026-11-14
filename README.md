@@ -8,6 +8,19 @@ Kho công cụ tự động hóa độ chính xác cao cho game **Clash of Critt
 
 ---
 
+### ⚡ DÀNH CHO NGƯỜI DÙNG CUỐI (TẢI VỀ CHẠY NGAY):
+> ### 📥 [👉 BẤM VÀO ĐÂY ĐỂ TẢI BẢN .EXE MỚI NHẤT (GITHUB RELEASES) 👈](https://github.com/9m0m/COC-autofishing/releases/latest)
+>
+> | Công cụ | File tải về (.exe) | Trạng thái | Hướng dẫn |
+> | :--- | :---: | :---: | :--- |
+> | 🎣 **Auto Câu Cá** | **[auto_cauca.exe](https://github.com/9m0m/COC-autofishing/releases/latest)** | ✅ Hoạt động ổn định | Xem bên dưới |
+> | 🏺 **Auto Phiêu Lưu Cổ Vật** | **[auto_phieuluu.exe](https://github.com/9m0m/COC-autofishing/releases/latest)** | ✅ Hoạt động ổn định | **[HUONG_DAN_PHIEULUU.md](HUONG_DAN_PHIEULUU.md)** |
+> | ⚔️ **Auto Rally Sa Hải Mê Thành** | *Đang hoàn thiện* | ⏳ Coming Soon | **[HUONG_DAN_RALLY.md](HUONG_DAN_RALLY.md)** |
+>
+> *(Chỉ cần tải file `.exe` về nhấp đúp là chạy, **hoàn toàn không cần cài đặt Python** hay bất kỳ thư viện nào).*
+
+---
+
 ## PHẦN 1: AUTO CÂU CÁ (COC-autofishing)
 
 ---
@@ -57,9 +70,9 @@ Kho công cụ tự động hóa độ chính xác cao cho game **Clash of Critt
 3. Lưu cài đặt và khởi động lại giả lập nếu được nhắc.
 
 ### Bước 2: Tải file chạy Auto về máy
-1. Tải bản chạy sẵn mới nhất (chỉ duy nhất 1 file `.exe`, không cần cài thêm Python hay bất kỳ thư viện nào):
-   - **Auto Câu Cá**: Chạy file `dist/auto_cauca.exe` hoặc click `run_auto.bat`.
-   - **Auto Phiêu Lưu Cổ Vật**: Chạy file `dist/auto_phieuluu.exe` hoặc click `run_phieuluu.bat`.
+1. Tải bản chạy sẵn mới nhất từ **[GitHub Releases](https://github.com/9m0m/COC-autofishing/releases/latest)** (chỉ duy nhất 1 file `.exe`, không cần cài thêm Python hay bất kỳ thư viện nào):
+   - **Auto Câu Cá**: Tải file **`auto_cauca.exe`** (hoặc chạy qua `run_auto.bat` nếu clone repository).
+   - **Auto Phiêu Lưu Cổ Vật**: Tải file **`auto_phieuluu.exe`** (hoặc chạy qua `run_phieuluu.bat` nếu clone repository).
    - **Auto Rally Sa Hải Mê Thành**: *(Tính năng đang phát triển - Coming Soon)*.
 2. Đặt file chạy ở vị trí thuận tiện trên máy tính (ví dụ: Desktop).
 
