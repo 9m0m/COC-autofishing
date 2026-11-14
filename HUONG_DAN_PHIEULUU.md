@@ -61,7 +61,7 @@ Bot vận hành theo một vòng lặp máy trạng thái (State Machine) thông
 ## 3. Cách Khởi Chạy
 
 ### Cách 1: Chạy file đóng gói sẵn (Khuyên dùng - Tiện lợi nhất)
-- **Tải file `.exe` mới nhất:** **[👉 Bấm vào đây để tải auto_phieuluu.exe tại GitHub Releases 👈](https://github.com/9m0m/COC-autofishing/releases/latest)**
+- **Tải file `.exe` mới nhất:** [Tải auto_phieuluu.exe tại GitHub Releases](https://github.com/9m0m/COC-autofishing/releases/latest)
 - Hoặc nếu đã clone repo, chạy trực tiếp file:
 ```
 dist\auto_phieuluu.exe
