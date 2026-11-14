@@ -16,6 +16,7 @@ expected_states = {
     7: ('SETTLEMENT', 'Chiến đấu thất bại / Phiêu lưu kết thúc -> Bấm CHẤP NHẬN -> Chờ 2s lặp lại từ đầu'),
     8: ('POPUP_RELIC', 'Nhận bảo vật tier B (Mèo Xác Ướp) -> Chờ 1.0s timing -> Chạm đóng popup'),
     9: ('POPUP_RELIC', 'Nhận bảo vật tier B huyền thoại -> Chờ 1.0s timing -> Chạm đóng popup'),
+    10: ('IN_DUNGEON', 'Màn hình coc3 Chặng 1 -> Bấm TIẾN LÊN -> Chờ 2s hoạt ảnh'),
 }
 
 print('========================================================================')
@@ -41,7 +42,7 @@ for idx, f in enumerate(files, 1):
 
 print('========================================================================')
 if all_pass:
-    print('KẾT QUẢ: TẤT CẢ 9/9 HÌNH ẢNH ĐỀU NHẬN DIỆN VÀ LẤY ĐÚNG TÂM NÚT FLEX 100%!')
+    print('KẾT QUẢ: TẤT CẢ 10/10 HÌNH ẢNH ĐỀU NHẬN DIỆN VÀ LẤY ĐÚNG TÂM NÚT FLEX 100%!')
 else:
     print('KẾT QUẢ: CÓ HÌNH ẢNH CHƯA ĐẠT KỲ VỌNG!')
 print('========================================================================')

@@ -202,16 +202,18 @@ Bạn không cần phải căn chỉnh toạ độ thủ công, bot tự động
 - **Cách 2:** Nhấp đúp chuột vào file `run_phieuluu.bat`.
 - **Cách 3:** Chạy lệnh: `python auto_phieuluu.py`.
 
-#### Bảng phím tắt toàn cục:
-| Phím tắt | Chức năng | Chi tiết |
+#### Bảng phím tắt toàn cục (Chuẩn 100% giống Auto Câu Cá):
+| Phím tắt | Trạng thái | Chức năng & Chi tiết |
 | :---: | :---: | :--- |
-| **`Ctrl + Q`** | **Bật / Tạm dừng** | Nhấn để tạm dừng bot khi bạn muốn tự tay thao tác game; nhấn lại để bot tiếp tục chạy tự động. |
-| **`ESC`** | **Dừng và Thoát** | Dừng hẳn bot ngay lập tức, xuất bảng thống kê (số vòng, bước đi, bảo vật, trận đánh) và thoát an toàn. |
+| **`Ctrl + Q`** | **[CHỜ LỆNH]** / **[TẠM DÙNG]** | **BẮT ĐẦU / TIẾP TỤC (Resume)**: Khi mở tool hoặc sau khi tạm dừng, nhấn `Ctrl + Q` để bắt đầu/tiếp tục chạy bot. |
+| **`ESC`** | **[ĐANG CHẠY]** | **TẠM DỪNG (Pause)**: Lập tức dừng quét và giải phóng chuột hoàn toàn để bạn chat/lướt web. |
+| **`ESC`** | **[TẠM DỪNG]** | **THOÁT HẲN**: Nhấn ESC lần thứ 2 khi bot đang tạm dừng để tắt tool an toàn và xuất bảng tổng kết. |
 
 #### ⚠️ Những điều cần lưu ý quan trọng:
-1. **Không thu nhỏ (Minimize) cửa sổ giả lập xuống Taskbar:** Bạn có thể để cửa sổ ở góc màn hình, để ở màn hình phụ hoặc để cửa sổ khác đè lên một phần, nhưng không được Minimize xuống thanh taskbar vì Windows sẽ ngưng render hình ảnh vào VRAM.
-2. **Tắt chế độ Tiết kiệm tài nguyên (Eco Mode trên BlueStacks):** Nhấn `Ctrl + Shift + F` trên BlueStacks để tắt Eco Mode, đảm bảo game chạy ổn định 60 FPS khi ở chế độ nền.
-3. **Di chuyển cửa sổ:** Nếu bạn kéo cửa sổ giả lập sang vị trí khác trên màn hình, bot tự động cập nhật lại toạ độ Game Viewport ở mỗi nhịp quét mà không bị lệch chuột.
+1. **Chạy nhiều giả lập cùng lúc (`coc1`, `coc2`, `coc3`)**: Trước khi nhấn `Ctrl + Q`, bạn chỉ cần click chuột vào cửa sổ giả lập muốn chạy để Active/Focus. Bot sẽ tự động ưu tiên cửa sổ đang được chọn!
+2. **Không thu nhỏ (Minimize) cửa sổ giả lập xuống Taskbar:** Bạn có thể để cửa sổ ở góc màn hình, để ở màn hình phụ hoặc để cửa sổ khác đè lên một phần, nhưng không được Minimize xuống thanh taskbar vì Windows sẽ ngưng render hình ảnh vào VRAM.
+3. **Tắt chế độ Tiết kiệm tài nguyên (Eco Mode trên BlueStacks):** Nhấn `Ctrl + Shift + F` trên BlueStacks để tắt Eco Mode, đảm bảo game chạy ổn định 60 FPS khi ở chế độ nền.
+4. **Di chuyển hoặc thu phóng cửa sổ:** Nhờ thuật toán Quét FLEX đa tỉ lệ, nếu bạn kéo cửa sổ giả lập sang vị trí khác hoặc phóng to/thu nhỏ, bot sẽ tự động tính toán lại tâm nút thực tế mà không bị lệch chuột.
 
 ---
 

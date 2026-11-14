@@ -37,6 +37,8 @@ EMULATOR_VIEWPORT_OFFSETS: dict = {
     "bluestacks": (32, 0, 50),   # BlueStacks 5: thanh công cụ nằm bên phải ~50px
     "app player": (32, 0, 50),   # BlueStacks App Player
     "hd-player":  (32, 0, 50),   # BlueStacks 5 process
+    "coc":        (32, 0, 50),   # Clash of Critters / coc multi-instance
+    "critters":   (32, 0, 50),   # Clash of Critters
     "ldplayer":   (34, 0, 44),   # LDPlayer 9: thanh công cụ nằm bên phải ~44px
     "dnplayer":   (34, 0, 44),   # LDPlayer process
     "nox":        (32, 0, 46),   # NoxPlayer: thanh công cụ nằm bên phải ~46px

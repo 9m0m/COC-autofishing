@@ -2,25 +2,27 @@
 COC-autophieuluu: Bot tu dong di su kien Phieu Luu Co Vat (Relic Adventure)
 cho game Clash of Critters tren cac trinh gia lap Android (BlueStacks 5, LDPlayer 9, MuMu, Nox, MEmu).
 
-Quy trinh tu dong:
-1. Cho lenh khoi dong: Khi mo tool len se o trang thai TAM DUNG, doi nguoi dung bam Ctrl+Q de bat dau.
-2. Quet FLEX da ti le: Tu dong quet tim vi tri nut thuc te tren man hinh (ho tro moi kich thuoc cua so to/nho).
-   Click truc tiep vao dung tam nut duoc phat hien thay vi dung toa do co dinh.
-3. Trong me cung (Dungeon): Bam 'Tien Len' va cho ~2s hoat anh di chuyen moi buoc (khong spam).
-4. Nhan Bao Vat / Co Vat (Relic Popup tier thap & cao):
-   Cho 1s theo dung timing game de hien chu 'Cham diem bat ki de tiep tuc', sau do cham dong popup.
-5. Gap quai vat chan duong (Monster):
-   Co 2 lua chon 'Rut Lui' va 'Chien Dau' -> Luon luon chon 'Chien Dau' (mac ke ti le thang).
-6. Ket toan / That bai (Settlement):
-   Bam 'Chap Nhan', cho 2s thoat ra sanh chinh va lap lai vong di tu dau.
-7. He thong chong treo (Watchdog / Anti-stuck) da tang:
-   - Tu dong cham an toan neu bi ket man hinh la / hoat anh qua 3.5s.
-   - Tu dong kich hoat lai cua so gia lap neu mat focus qua 8s.
-   - Phat hien ket cung 1 trang thai (vi du: het duoc, lag mang).
-8. Khong chiem chuot 100%: Tu dong nho va hoan tra con tro chuot ve vi tri cu ngay lap tuc de thoai mai luot web.
-9. Phim tat:
-   - Ctrl + Q : Bat / Tam dung (Pause / Resume)
-   - ESC      : Dung va thoat ngay lap tuc
+Co che hoat dong (chuan 100% tuong tu auto_cauca):
+1. Khoi dong an toan:
+   - Khi mo tool se o trang thai [CHO LENH] / [TAM DUNG].
+   - Nhan [Ctrl + Q] de BAT DAU / TIEP TUC (Resume).
+   - Nhan [ESC] khi dang chay de TAM DUNG ngay lap tuc (Pause) va giai phong chuot.
+   - Nhan [ESC] khi dang tam dung de THOAT HAN chuong trinh.
+2. Quet FLEX da ti le & da tang (Multi-scale Flex Matching):
+   - Tu dong quet ti le cua so thuc te (ho tro moi kich co to/nho, 720p/1080p).
+   - Tich hop phan tich dải màu HSV contour du phong de khong bao gio bo sot nut 'Tien Len'.
+   - Bấm trực tiếp vào tâm nút thực tế (Flex Click) thay vì toạ độ cố định.
+3. Quy trinh su kien:
+   - Sảnh chính: Tự tìm nút và bấm 'Bắt Đầu Phiêu Lưu!'.
+   - Trong mê cung: Tự tìm nút 'Tiến Lên', bấm và chờ 2.0s hoạt ảnh bước đi.
+   - Nhận bảo vật (Tier thấp/cao): Chờ đúng 1.0s timing hoạt ảnh rồi mới chạm đóng popup.
+   - Gặp quái vật: Luôn luôn chọn 'Chiến Đấu' (bỏ qua tỉ lệ thắng/thua).
+   - Kết toán thất bại: Bấm 'Chấp Nhận', chờ 2.0s thoát ra sảnh chính và lặp lại từ đầu.
+4. Chống chiếm chuột:
+   - Chỉ chạm chuột ~0.08s rồi ngay lập tức hoàn trả con trỏ chuột về toạ độ cũ để bạn thoải mái lướt web.
+5. Chống treo (Watchdog):
+   - Tự động chạm an toàn giải phóng màn hình nếu kẹt lạ quá 3.5s.
+   - Tự động kích hoạt lại cửa sổ nếu mất tiêu điểm quá 8s.
 """
 
 import sys
@@ -53,9 +55,9 @@ from emulator import (
 # Thiet lap Windows Console & DPI Awareness
 setup_windows_environment()
 
-# Quan ly trang thai (Bat dau o trang thai TAM DUNG cho nguoi dung bam Ctrl+Q)
+# Quan ly trang thai (Khoi tao o che do tam dung, giong auto_cauca)
 _stop_event = threading.Event()
-_is_paused = True
+_stop_event.set()
 
 # Thong ke hoat dong
 _stats = {
@@ -117,7 +119,7 @@ def detect_pillarbox(crop: np.ndarray, black_thresh: Optional[float] = None, min
     return offset_x, real_w
 
 
-def get_effective_viewport(sct: mss.MSS, raw_vp: Tuple[int, int, int, int], force_check: bool = False) -> Tuple[int, int, int, int]:
+def get_effective_viewport(sct: Any, raw_vp: Tuple[int, int, int, int], force_check: bool = False) -> Tuple[int, int, int, int]:
     """
     Lay toa do viewport thuc te cua game sau khi loai tru dai den hai ben suon.
     Tu dong do lai neu kich thuoc hoac vi tri cua so thay doi.
@@ -147,7 +149,7 @@ def get_effective_viewport(sct: mss.MSS, raw_vp: Tuple[int, int, int, int], forc
 
 
 def _sleep(seconds: float) -> bool:
-    """Tam dung co the huy lap tuc bang ESC."""
+    """Tam dung co the huy lap tuc bang ESC hoac _stop_event."""
     return sleep_check(seconds, _stop_event)
 
 
@@ -163,12 +165,12 @@ def find_template_flex(
     gray_vp: np.ndarray,
     tpl: np.ndarray,
     roi_rel: Tuple[float, float, float, float],
-    thresh: float = 0.70,
+    thresh: float = 0.68,
 ) -> Optional[Tuple[float, Tuple[int, int, int, int]]]:
     """
     Quet FLEX da ti le tim template trong vung ROI tuong doi cua Game Viewport:
     - roi_rel: (x1_ratio, y1_ratio, x2_ratio, y2_ratio)
-    - Tu dong quet qua cac ti le co dan (0.7x -> 1.4x) quanh ti le chuan.
+    - Tu dong quet qua cac ti le co dan quanh ti le thuc cua man hinh.
     Tra ve: (best_score, (center_x, center_y, box_w, box_h)) hoac None neu khong tim thay.
     """
     if gray_vp is None or tpl is None:
@@ -189,15 +191,21 @@ def find_template_flex(
     if sub.shape[0] < 15 or sub.shape[1] < 15:
         return None
 
-    # Ti le co dan uoc tinh theo chieu rong viewport
+    # Ti le co dan uoc tinh theo chieu rong chuan (405px)
     est_scale = vw / 405.0
-    scale_factors = [1.0, 0.92, 1.08, 0.82, 1.22, 0.70, 1.40]
+    fine_factors = [1.0, 0.96, 1.04, 0.92, 1.08, 0.88, 1.12, 0.84, 1.16, 0.80, 1.22, 1.30, 0.70, 1.40]
+    scales = []
+    seen = set()
+    for sc in [1.0] + [est_scale * f for f in fine_factors]:
+        sc_r = round(sc, 3)
+        if 0.35 <= sc_r <= 2.5 and sc_r not in seen:
+            seen.add(sc_r)
+            scales.append(sc_r)
 
     best_score = 0.0
     best_match: Optional[Tuple[int, int, int, int]] = None
 
-    for f in scale_factors:
-        cur_sc = est_scale * f
+    for cur_sc in scales:
         tw = int(tpl_gray.shape[1] * cur_sc)
         th = int(tpl_gray.shape[0] * cur_sc)
         if tw >= sub.shape[1] or th >= sub.shape[0] or tw < 10 or th < 10:
@@ -215,7 +223,6 @@ def find_template_flex(
             cy = ry1 + max_l[1] + th // 2
             best_match = (cx, cy, tw, th)
 
-        # Neu dat do khop rat cao thi dung som de tiet kiem CPU
         if max_v >= 0.88:
             break
 
@@ -241,38 +248,37 @@ def classify_screen_flex(vp_img: np.ndarray) -> Tuple[str, float, Optional[Tuple
 
     # 1. Kiem tra Man Ket Toan / That Bai (Hình 7 - nut Chap Nhan)
     if "chap_nhan" in tpls:
-        m = find_template_flex(gray, tpls["chap_nhan"], (0.10, 0.70, 0.90, 0.98), thresh=0.70)
+        m = find_template_flex(gray, tpls["chap_nhan"], (0.10, 0.70, 0.90, 0.98), thresh=0.68)
         if m:
             score, (cx, cy, tw, th) = m
             return "SETTLEMENT", score, (cx, cy)
 
     # 2. Kiem tra Quai Vat Chan Duong (Hình 2 - the Chien Dau)
     if "chien_dau" in tpls:
-        m = find_template_flex(gray, tpls["chien_dau"], (0.45, 0.55, 0.98, 0.98), thresh=0.70)
+        m = find_template_flex(gray, tpls["chien_dau"], (0.45, 0.55, 0.98, 0.98), thresh=0.68)
         if m:
             score, (cx, cy, tw, th) = m
             return "MONSTER", score, (cx, cy)
 
     # 3. Kiem tra Popup Co Vat / Bao Vat (Hình 1, 5, 8, 9 - Cham de tiep tuc)
     if "cham_tiep_tuc" in tpls:
-        m = find_template_flex(gray, tpls["cham_tiep_tuc"], (0.05, 0.75, 0.95, 1.00), thresh=0.75)
+        m = find_template_flex(gray, tpls["cham_tiep_tuc"], (0.05, 0.75, 0.95, 1.00), thresh=0.72)
         if m:
             score, (cx, cy, tw, th) = m
             return "POPUP_RELIC", score, (cx, cy)
 
     # 4. Kiem tra Sanh Chinh (Hình 6 - nut Bat Dau Phieu Luu!)
     if "bat_dau" in tpls:
-        m = find_template_flex(gray, tpls["bat_dau"], (0.15, 0.70, 0.85, 0.98), thresh=0.72)
+        m = find_template_flex(gray, tpls["bat_dau"], (0.15, 0.70, 0.85, 0.98), thresh=0.70)
         if m:
             score, (cx, cy, tw, th) = m
             return "LOBBY", score, (cx, cy)
 
     # 5. Kiem tra Trong Me Cung - Nut 'Tien Len' (Hình 3, 4)
     if "tien_len" in tpls:
-        m = find_template_flex(gray, tpls["tien_len"], (0.20, 0.65, 0.80, 0.98), thresh=0.72)
+        m = find_template_flex(gray, tpls["tien_len"], (0.20, 0.60, 0.80, 0.98), thresh=0.68)
         if m:
             score, (cx, cy, tw, th) = m
-            # Kiem tra pixel mau xanh ngoc trong vung nut de tranh truong hop nut bi lam toi do popup
             y1 = max(0, cy - th // 2)
             y2 = min(vh, cy + th // 2)
             x1 = max(0, cx - tw // 2)
@@ -280,9 +286,25 @@ def classify_screen_flex(vp_img: np.ndarray) -> Tuple[str, float, Optional[Tuple
             roi_cyan = hsv[y1:y2, x1:x2]
             mask_cyan = cv2.inRange(roi_cyan, np.array([65, 80, 100]), np.array([100, 255, 255]))
             cyan_px = int(np.count_nonzero(mask_cyan))
-            min_cyan = int(1200 * ((vw / 405.0) ** 2))
+            min_cyan = int(800 * ((vw / 405.0) ** 2))
             if cyan_px >= min_cyan:
                 return "IN_DUNGEON", score, (cx, cy)
+        else:
+            # Fallback mau sac: Phat hien contour vong tron xanh ngoc cua nut Tien Len
+            roi_y1 = int(vh * 0.65)
+            roi_y2 = int(vh * 0.95)
+            roi_x1 = int(vw * 0.20)
+            roi_x2 = int(vw * 0.80)
+            roi_hsv = hsv[roi_y1:roi_y2, roi_x1:roi_x2]
+            mask_cyan = cv2.inRange(roi_hsv, np.array([70, 80, 100]), np.array([95, 255, 255]))
+            cnts, _ = cv2.findContours(mask_cyan, cv2.RETR_EXTERNAL, cv2.CHAIN_APPROX_SIMPLE)
+            min_dim = int(35 * (vw / 405.0))
+            for c in cnts:
+                bx, by, bw, bh = cv2.boundingRect(c)
+                if bw >= min_dim and bh >= min_dim and abs(bw - bh) < int(35 * (vw / 405.0)):
+                    cx = roi_x1 + bx + bw // 2
+                    cy = roi_y1 + by + bh // 2
+                    return "IN_DUNGEON", 0.90, (cx, cy)
 
     return "UNKNOWN", 0.0, None
 
@@ -301,9 +323,9 @@ def print_banner() -> None:
     print("    5. [Ket Toan Thua] : Bam 'Chap Nhan' + Cho 2s reset loop sanh")
     print("    6. [Chong Treo]    : Tu dong giai phong khi ket la > 3.5s")
     print("-" * 65)
-    print("  Phim tat dieu khien:")
-    print("    [Ctrl + Q] : BAT / TAM DUNG (Pause / Resume)")
-    print("    [ESC]      : DUNG BOT VA THOAT")
+    print("  Phim tat dieu khien (Giong Auto Cau Ca):")
+    print("    - [Ctrl + Q] : BAT DAU / TIEP TUC (Resume)")
+    print("    - [ESC]      : TAM DUNG (Pause) - Nhan lan 2 de THOAT HAN")
     print("=" * 65)
     print()
 
@@ -324,67 +346,115 @@ def log_stats() -> None:
     )
 
 
-def on_hotkey_toggle() -> None:
-    """Xu ly phim Ctrl + Q de Bat / Tam dung."""
-    global _is_paused
-    _is_paused = not _is_paused
-    if not _is_paused:
-        _stats["start_time"] = time.time()
-        log("=== TRANG THAI BOT: DANG CHAY (RUNNING) ===")
-    else:
-        log("=== TRANG THAI BOT: TAM DUNG (PAUSED) ===")
-
-
-def on_hotkey_stop() -> None:
-    """Xu ly phim ESC de thoat bot."""
-    log("=== NHAN ESC: DANG DUNG BOT VA THOAT AN TOAN ===")
-    _stop_event.set()
-
-
 def main() -> None:
-    """Vong lap chinh cua Auto Phieu Luu Co Vat."""
-    global _is_paused, _stats
+    """Vong lap chinh cua Auto Phieu Luu Co Vat (chuan theo co che auto_cauca)."""
+    global _stats
 
     print_banner()
-
-    # Dang ky hotkeys
-    try:
-        keyboard.add_hotkey("ctrl+q", on_hotkey_toggle)
-        keyboard.add_hotkey("esc", on_hotkey_stop)
-    except Exception as e:
-        log(f"[CANH BAO] Khong the dang ky phim tat keyboard ({e}).")
 
     # Tim cua so gia lap
     log("[KHOI TAO] Dang tim kiem cua so gia lap Android (BlueStacks, LDPlayer, MuMu, Nox, MEmu)...")
     win = find_emulator_window()
     if not win:
         log("[LOI] Khong tim thay cua so gia lap Android nao dang mo!")
-        log("Vui long mo gia lap va dang nhap game Clash of Critters truoc khi chay tool.")
-        safe_unhook_hotkeys()
+        log("Vui long mo gia lap va vao game truoc khi chay tool.")
         return
 
     hwnd = win._hWnd
     win_title = win.title or "Gia lap"
-    log(f"[KET NOI] Da ket noi cua so: '{win_title}' (HWND: {hwnd})")
+    left, top, w, h = get_game_viewport(hwnd, win_title)
+    log(f"[KET NOI] '{win_title}' | Game: {w}x{h} tai ({left}, {top})")
+    print("*" * 55)
+    log("[CHU Y] Hay kiem tra log [KET NOI] ben tren xem da DUNG gia lap ban muon choi chua!")
+    log("[CHU Y] Neu dang mo nhieu gia lap (coc1, coc2, coc3), hay click chuot vao gia lap muon chay de bot uu tien.")
+    print("*" * 55)
 
-    # Bat dau o trang thai TAM DUNG cho nguoi dung bam Ctrl+Q
-    _is_paused = True
-    log("[CHO LENH] Bot dang o trang thai TAM DUNG de ban chuan bi san sang.")
-    log("👉 Nhan [Ctrl + Q] de BAT DAU tu dong!")
-    log("👉 Nhan [ESC] de THOAT chuong trinh.")
+    mss_factory = getattr(mss, "MSS", None)
+    if mss_factory is None:
+        mss_factory = getattr(mss, "mss")
+
+    is_first_start = True
 
     # Bien kiem soat chong treo
     last_known_state = "UNKNOWN"
     last_known_state_time = time.time()
+    last_scan_log_time = 0.0
     same_state_count = 0
 
-    mss_factory = getattr(mss, "MSS", mss.mss)
     with mss_factory() as sct:
-        while not _stop_event.is_set():
-            # Neu dang tam dung: khong click bat ky thu gi
-            if _is_paused:
-                if _sleep(0.2):
+        while True:
+            # =========================================================
+            # XU LY TRANG THAI TAM DUNG / CHO LENH (PAUSED STATE)
+            # (Hoan toan giong 100% auto_cauca: Ctrl+Q de Resume, ESC de Thoat)
+            # =========================================================
+            if _stop_event.is_set():
+                safe_unhook_hotkeys()
+                _stop_event.clear()
+
+                # Doi nha cac phim dang giu
+                while keyboard.is_pressed("esc") or keyboard.is_pressed("ctrl+q") or (keyboard.is_pressed("ctrl") and keyboard.is_pressed("q")):
+                    time.sleep(0.05)
+
+                print("-" * 55)
+                if is_first_start:
+                    log("[CHO LENH] Mo su kien Phieu Luu Co Vat tren gia lap.")
+                    log(f"[CHU Y] Dang ket noi voi: '{win_title}'.")
+                    log("[CHO LENH] Nhan Ctrl+Q de BAT DAU | Nhan ESC de THOAT HAN...")
+                else:
+                    log("[TAM DUNG] Da tam dung auto. Chuot da duoc giai phong!")
+                    log_stats()
+                    log("[CHU Y] Neu ban di chuyen hoac zoom man hinh, tool se tu dong bo lai khi Resume.")
+                    log("[CHO LENH] Nhan Ctrl+Q de TIEP TUC (Resume)...")
+                    log("[CHO LENH] Nhan ESC de THOAT HAN tool...")
+                print("-" * 55)
+
+                should_exit = False
+                while True:
+                    if keyboard.is_pressed("ctrl+q") or (keyboard.is_pressed("ctrl") and keyboard.is_pressed("q")):
+                        break
+                    if keyboard.is_pressed("esc"):
+                        should_exit = True
+                        break
+                    time.sleep(0.05)
+
+                if should_exit:
+                    log("[THOAT] Nguoi dung nhan ESC de thoat han.")
                     break
+
+                # Debounce phim
+                while keyboard.is_pressed("ctrl") or keyboard.is_pressed("q"):
+                    time.sleep(0.05)
+                time.sleep(0.2)
+
+                # DANG KY LAI HOTKEY ESC DE BAT TAM DUNG KHI DANG CHAY
+                _stop_event.clear()
+                keyboard.add_hotkey("esc", _stop_event.set, suppress=True)
+
+                # Khi Resume: Dong bo lai toan bo toa do viewport moi nhat
+                win = find_emulator_window()
+                if win:
+                    hwnd = win._hWnd
+                    win_title = win.title or win_title
+                raw_vp = get_game_viewport(hwnd, win_title)
+                vp = get_effective_viewport(sct, raw_vp, force_check=True)
+                gw_l, gw_t, gw_w, gw_h = vp
+
+                if is_first_start:
+                    log(f"[KHOI DONG] Auto bat dau tren '{win_title}' ({gw_w}x{gw_h})! Nhan ESC bat cu luc nao de TAM DUNG.\n")
+                    is_first_start = False
+                else:
+                    log(f"[TIEP TUC] Auto tiep tuc tren '{win_title}' ({gw_w}x{gw_h})! Nhan ESC bat cu luc nao de TAM DUNG.\n")
+
+                _stats["start_time"] = time.time()
+                last_known_state_time = time.time()
+                last_scan_log_time = time.time()
+                same_state_count = 0
+                continue
+
+            # =========================================================
+            # VONG LAP CHINH DANG CHAY (RUNNING)
+            # =========================================================
+            if _stop_event.is_set():
                 continue
 
             # Kiem tra cua so con ton tai khong
@@ -393,16 +463,16 @@ def main() -> None:
                 win = find_emulator_window()
                 if not win:
                     if _sleep(1.0):
-                        break
+                        continue
                     continue
                 hwnd = win._hWnd
                 win_title = win.title
 
-            # Lay toan bo kich thuoc game viewport moi nhat (Flex theo cua so thuc)
+            # Lay toan bo kich thuoc game viewport moi nhat
             raw_vp = get_game_viewport(hwnd, win_title)
             if raw_vp[2] < 150 or raw_vp[3] < 200:
-                if _sleep(0.5):
-                    break
+                if _sleep(0.3):
+                    continue
                 continue
 
             vp = get_effective_viewport(sct, raw_vp)
@@ -412,7 +482,7 @@ def main() -> None:
             vp_img = safe_grab(sct, {"left": gw_l, "top": gw_t, "width": gw_w, "height": gw_h})
             if vp_img is None:
                 if _sleep(0.2):
-                    break
+                    continue
                 continue
 
             # Nhan dien trang thai va lay toa do TAM NUT THUC TE (FLEX)
@@ -443,13 +513,13 @@ def main() -> None:
                     cx = int(gw_l + gw_w * config.PHIEULUU_START_REL_X)
                     cy = int(gw_t + gw_h * config.PHIEULUU_START_REL_Y)
 
-                log(f"[SANH CHINH] Phat hien 'Bat Dau Phieu Luu!' (Do khop: {score:.2f}) -> Flex Click ({cx}, {cy})")
+                log(f"[SANH CHINH] Phat hien 'Bat Dau Phieu Luu!' tai tam ({cx}, {cy}) (Do khop: {score:.2f}) -> Flex Click")
                 activate_window(hwnd)
                 touch_tap(cx, cy, desc="Nut 'Bat Dau Phieu Luu!'")
                 _stats["runs_started"] += 1
                 log_stats()
                 if _sleep(config.PHIEULUU_DELAY_AFTER_START):
-                    break
+                    continue
 
             elif state == "IN_DUNGEON":
                 # TRONG ME CUNG: Bam 'Tien Len'
@@ -461,7 +531,7 @@ def main() -> None:
                     touch_tap(cx, cy, desc="Cham trung tam giai phong")
                     same_state_count = 0
                     if _sleep(1.0):
-                        break
+                        continue
                     continue
 
                 if center_pt is not None:
@@ -471,20 +541,20 @@ def main() -> None:
                     cx = int(gw_l + gw_w * config.PHIEULUU_ADVANCE_REL_X)
                     cy = int(gw_t + gw_h * config.PHIEULUU_ADVANCE_REL_Y)
 
-                log(f"[ME CUNG] San sang buoc tiep -> Flex Click nut 'Tien Len' ({cx}, {cy}) (Do khop: {score:.2f})")
+                log(f"[ME CUNG] Phat hien nut 'Tien Len' tai tam ({cx}, {cy}) (Do khop: {score:.2f}) -> Flex Click buoc di")
                 touch_tap(cx, cy, desc="Nut 'Tien Len'")
                 _stats["advances"] += 1
 
                 # Theo yeu cau: "trong qua trinh di thi se ton tam 2s gi do de di tien len"
                 if _sleep(config.PHIEULUU_DELAY_AFTER_ADVANCE):
-                    break
+                    continue
 
             elif state == "POPUP_RELIC":
                 # NHAN CO VAT / BAO VAT
                 # Theo yeu cau: "ca 2 pop khi nhan do tier thap hay cao deu can la timing 1s de no bao la cham vao man hinh de tiep tuc"
                 log(f"[BAO VAT] Xuat hien phan thuong co vat (Do khop: {score:.2f}) -> Cho 1.0s timing hoat anh...")
                 if _sleep(config.PHIEULUU_DELAY_POPUP_TIMING):
-                    break
+                    continue
 
                 # Chon vi tri cham dong popup: Uu tien vi tri chu 'Cham de tiep tuc' hoac day popup
                 if center_pt is not None:
@@ -494,13 +564,13 @@ def main() -> None:
                     cx = int(gw_l + gw_w * config.PHIEULUU_DISMISS_REL_X)
                     cy = int(gw_t + gw_h * config.PHIEULUU_DISMISS_REL_Y)
 
-                log(f"-> Cham dong popup bao vat tai ({cx}, {cy})")
+                log(f"-> Cham dong popup bao vat tai tam ({cx}, {cy})")
                 touch_tap(cx, cy, desc="Dong popup bao vat")
                 _stats["relics_collected"] += 1
                 log(f"-> Da dong popup (Tong co vat da nhan: {_stats['relics_collected']})")
 
                 if _sleep(config.PHIEULUU_DELAY_AFTER_DISMISS):
-                    break
+                    continue
 
             elif state == "MONSTER":
                 # GAP QUAI VAT CHAN DUONG
@@ -512,13 +582,13 @@ def main() -> None:
                     cx = int(gw_l + gw_w * config.PHIEULUU_FIGHT_REL_X)
                     cy = int(gw_t + gw_h * config.PHIEULUU_FIGHT_REL_Y)
 
-                log(f"[QUAI VAT] Xuat hien quai vat chan duong (Do khop: {score:.2f}) -> LUON CHON CHIEN DAU! Flex Click ({cx}, {cy})")
+                log(f"[QUAI VAT] Phat hien quai vat chan duong (Do khop: {score:.2f}) -> LUON CHON CHIEN DAU! Flex Click ({cx}, {cy})")
                 touch_tap(cx, cy, desc="The 'Chien Dau'")
                 _stats["fights"] += 1
 
                 # Cho tran danh hoan tat
                 if _sleep(config.PHIEULUU_DELAY_AFTER_FIGHT):
-                    break
+                    continue
 
             elif state == "SETTLEMENT":
                 # MAN KET TOAN / THAT BAI
@@ -537,11 +607,15 @@ def main() -> None:
 
                 log(f"[RESET LOOP] Cho {config.PHIEULUU_DELAY_AFTER_RESET}s thoat ra sanh chinh de lap lai tu dau...")
                 if _sleep(config.PHIEULUU_DELAY_AFTER_RESET):
-                    break
+                    continue
 
             else:
                 # TRANG THAI LA / LOADING / CHUA XAC DINH -> CO CHE CHONG TREO (WATCHDOG)
                 unknown_duration = now - last_known_state_time
+
+                if unknown_duration >= 1.5 and (now - last_scan_log_time >= 2.5):
+                    last_scan_log_time = now
+                    log(f"[DANG QUET] Dang theo doi man hinh game '{win_title}' ({gw_w}x{gw_h})...")
 
                 if unknown_duration >= config.PHIEULUU_WATCHDOG_ACTIVATE_TIMEOUT:
                     log(f"[CHONG TREO] Khong ro trang thai qua {unknown_duration:.1f}s -> Kich hoat lai cua so gia lap...")
@@ -559,7 +633,7 @@ def main() -> None:
                     last_known_state_time = now - 1.5
 
                 if _sleep(0.35):
-                    break
+                    continue
 
     safe_unhook_hotkeys()
     log("=== BOT DA KET THUC HOAT DONG AN TOAN. TAM BIET! ===")

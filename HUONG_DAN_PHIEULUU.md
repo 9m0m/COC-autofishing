@@ -37,12 +37,17 @@ Bot vận hành theo một vòng lặp máy trạng thái (State Machine) thông
 
 ---
 
-## 2. Phím Tắt Điều Khiển
+## 2. Phím Tắt Điều Khiển (Chuẩn 100% Giống Auto Câu Cá)
 
-| Phím tắt | Chức năng | Mô tả |
+| Phím tắt | Trạng thái | Chức năng & Hành vi |
 | :--- | :--- | :--- |
-| **`Ctrl + Q`** | **Bật / Tạm dừng** | Tạm dừng bot bất kỳ lúc nào để bạn tự tay thao tác chuột trong game, nhấn lại `Ctrl + Q` để bot tiếp tục chạy. |
-| **`ESC`** | **Dừng và Thoát** | Dừng ngay lập tức toàn bộ tiến trình, xuất bảng tổng kết số bảo vật / bước đi và thoát an toàn. |
+| **`Ctrl + Q`** | Khi đang **[CHỜ LỆNH]** / **[TẠM DÙNG]** | **BẮT ĐẦU / TIẾP TỤC (Resume)**: Bot tự động đồng bộ lại toạ độ cửa sổ mới nhất và tiếp tục chạy vòng lặp phiêu lưu. |
+| **`ESC`** | Khi đang **[CHẠY]** | **TẠM DỪNG (Pause)**: Dừng quét ngay lập tức, giải phóng chuột hoàn toàn để bạn chat/làm việc. |
+| **`ESC`** | Khi đang **[TẠM DỪNG]** | **THOÁT HẲN**: Tắt tool an toàn và in bảng tổng kết số bảo vật / bước đi. |
+
+> [!TIP]
+> **Hỗ trợ chạy nhiều giả lập cùng lúc (`coc1`, `coc2`, `coc3`)**:  
+> Trước khi nhấn `Ctrl + Q`, bạn chỉ cần click chuột vào cửa sổ giả lập muốn chạy để Active/Focus. Bot sẽ tự động nhận diện cửa sổ đang được chọn làm mục tiêu ưu tiên!
 
 ---
 

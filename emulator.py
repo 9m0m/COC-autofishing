@@ -102,7 +102,7 @@ EMULATOR_TITLE_KEYWORDS = [
     "nox",
     "mumu", "nemu",
     "memu",
-    "clash of critters", "critters",
+    "clash of critters", "critters", "coc",
 ]
 
 
@@ -128,8 +128,13 @@ def get_process_name_by_hwnd(hwnd: int) -> str:
 
 
 def find_emulator_window() -> Optional[gw.Window]:
-    """Tìm kiếm cửa sổ của các trình giả lập Android phổ biến đang mở."""
+    """
+    Tìm kiếm cửa sổ của các trình giả lập Android phổ biến đang mở.
+    Ưu tiên 1: Cửa sổ giả lập đang được người dùng click/focus (Foreground Window).
+    Ưu tiên 2: Cửa sổ có diện tích hiển thị lớn nhất và đang hiển thị trên màn hình.
+    """
     candidates = []
+    fore_hwnd = user32.GetForegroundWindow()
     try:
         for w in gw.getAllWindows():
             hwnd = w._hWnd
@@ -158,18 +163,23 @@ def find_emulator_window() -> Optional[gw.Window]:
 
             if title_matched or proc_matched:
                 area = width * height
-                candidates.append((area, w, proc_name, title))
+                is_foreground = 1 if (hwnd == fore_hwnd) else 0
+                candidates.append((is_foreground, area, w, proc_name, title))
     except Exception:
         pass
 
     if not candidates:
         return None
 
-    candidates.sort(key=lambda x: x[0], reverse=True)
+    # Sắp xếp: Ưu tiên Foreground Window (đang click), sau đó đến diện tích lớn nhất
+    candidates.sort(key=lambda x: (x[0], x[1]), reverse=True)
     if len(candidates) > 1:
-        log(f"[CANH BAO] Phat hien {len(candidates)} cua so gia lap. Uu tien dung: '{candidates[0][3]}' ({candidates[0][2]})")
+        titles_str = ", ".join([f"'{c[4]}' ({c[3]})" for c in candidates])
+        chosen = candidates[0]
+        status_note = " (Dang Focus)" if chosen[0] == 1 else ""
+        log(f"[PHAT HIEN {len(candidates)} GIA LAP] Danh sach: [{titles_str}] -> Uu tien: '{chosen[4]}'{status_note}")
 
-    return candidates[0][1]
+    return candidates[0][2]
 
 
 def get_window_rect(hwnd: int) -> Tuple[int, int, int, int]:
