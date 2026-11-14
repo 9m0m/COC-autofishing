@@ -232,12 +232,35 @@ def classify_screen_flex(vp_img: np.ndarray) -> Tuple[str, float, Optional[Tuple
             score, (cx, cy, tw, th) = m
             return "POPUP_RELIC", score, (cx, cy)
 
-    # 4. Kiem tra Sanh Chinh (Hình 6 - nut Bat Dau Phieu Luu!)
+    # 4. Kiem tra Sanh Chinh (Hình 6 & Hình Tiếng Trung - nut Bat Dau Phieu Luu! / 去探险!)
     if "bat_dau" in tpls:
-        m = find_template_flex(gray, tpls["bat_dau"], (0.15, 0.70, 0.85, 0.98), thresh=0.70)
+        m = find_template_flex(gray, tpls["bat_dau"], (0.15, 0.70, 0.85, 0.98), thresh=0.68)
         if m:
             score, (cx, cy, tw, th) = m
             return "LOBBY", score, (cx, cy)
+
+    if "bat_dau_cn" in tpls:
+        m = find_template_flex(gray, tpls["bat_dau_cn"], (0.15, 0.70, 0.85, 0.98), thresh=0.68)
+        if m:
+            score, (cx, cy, tw, th) = m
+            return "LOBBY", score, (cx, cy)
+
+    # Fallback da ngon ngu cho Sanh Chinh: Phat hien khoi nut bam mau cam/vang lon o day man hinh
+    roi_lb_y1 = int(vh * 0.75)
+    roi_lb_y2 = int(vh * 0.95)
+    roi_lb_x1 = int(vw * 0.20)
+    roi_lb_x2 = int(vw * 0.80)
+    roi_lb_hsv = hsv[roi_lb_y1:roi_lb_y2, roi_lb_x1:roi_lb_x2]
+    mask_orange = cv2.inRange(roi_lb_hsv, np.array([10, 130, 170]), np.array([28, 255, 255]))
+    cnts_orange, _ = cv2.findContours(mask_orange, cv2.RETR_EXTERNAL, cv2.CHAIN_APPROX_SIMPLE)
+    min_w = int(75 * (vw / 405.0))
+    min_h = int(22 * (vw / 405.0))
+    for c in cnts_orange:
+        bx, by, bw, bh = cv2.boundingRect(c)
+        if bw >= min_w and bh >= min_h:
+            cx = roi_lb_x1 + bx + bw // 2
+            cy = roi_lb_y1 + by + bh // 2
+            return "LOBBY", 0.95, (cx, cy)
 
     # 5. Kiem tra Trong Me Cung - Nut 'Tien Len' (Hình 3, 4, 10, 11)
     if "tien_len" in tpls:
@@ -247,17 +270,17 @@ def classify_screen_flex(vp_img: np.ndarray) -> Tuple[str, float, Optional[Tuple
             return "IN_DUNGEON", score, (cx, cy)
         else:
             # Fallback mau sac: Phat hien contour vong tron xanh ngoc cua nut Tien Len
-            roi_y1 = int(vh * 0.55)
+            roi_y1 = int(vh * 0.65)
             roi_y2 = int(vh * 0.98)
-            roi_x1 = int(vw * 0.15)
-            roi_x2 = int(vw * 0.85)
+            roi_x1 = int(vw * 0.20)
+            roi_x2 = int(vw * 0.80)
             roi_hsv = hsv[roi_y1:roi_y2, roi_x1:roi_x2]
-            mask_cyan = cv2.inRange(roi_hsv, np.array([65, 70, 90]), np.array([100, 255, 255]))
+            mask_cyan = cv2.inRange(roi_hsv, np.array([65, 75, 95]), np.array([100, 255, 255]))
             cnts, _ = cv2.findContours(mask_cyan, cv2.RETR_EXTERNAL, cv2.CHAIN_APPROX_SIMPLE)
-            min_dim = int(30 * (vw / 405.0))
+            min_dim = int(35 * (vw / 405.0))
             for c in cnts:
                 bx, by, bw, bh = cv2.boundingRect(c)
-                if bw >= min_dim and bh >= min_dim and abs(bw - bh) < int(40 * (vw / 405.0)):
+                if bw >= min_dim and bh >= min_dim and abs(bw - bh) < int(25 * (vw / 405.0)):
                     cx = roi_x1 + bx + bw // 2
                     cy = roi_y1 + by + bh // 2
                     return "IN_DUNGEON", 0.90, (cx, cy)
