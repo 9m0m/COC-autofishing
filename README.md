@@ -4,7 +4,7 @@ Kho công cụ tự động hóa độ chính xác cao cho game **Clash of Critt
 
 1. **Auto Câu Cá (Fishing Minigame)**: Tự động giật cần, khóa cứng ô vàng siêu nhỏ 2-pha, tự giải phóng thẻ bài và nhận quà (chi tiết xem bên dưới).
 2. **Auto Rally Sa Hải Mê Thành (Gold Rush)**: Tự động quét và tham gia các cuộc Tổng Tấn Công trên Tổng Mapview, tự đóng popup và nhận thưởng (chi tiết xem riêng tại: **[HUONG_DAN_RALLY.md](HUONG_DAN_RALLY.md)**).
-3. **Auto Phiêu Lưu Cổ Vật (Relic Adventure)**: Tự động đi mê cung, thu thập bảo vật/cổ vật mọi tier, luôn chọn chiến đấu quái vật, tự kết toán và reset vòng lặp với cơ chế chống treo đa tầng (chi tiết xem riêng tại: **[HUONG_DAN_PHIEULUU.md](HUONG_DAN_PHIEULUU.md)**).
+3. **Auto Phiêu Lưu Cổ Vật (Relic Adventure)**: Tự động đi mê cung, thu thập bảo vật/cổ vật mọi tier, luôn chọn chiến đấu quái vật, tự kết toán và reset vòng lặp với cơ chế chống treo đa tầng và hỗ trợ đa màn hình chuẩn DPI (chi tiết xem riêng tại: **[HUONG_DAN_PHIEULUU.md](HUONG_DAN_PHIEULUU.md)**).
 
 ---
 
@@ -149,13 +149,15 @@ Kho công cụ tự động hóa độ chính xác cao cho game **Clash of Critt
 ---
 
 ### 🔄 1. Quy trình hoạt động khép kín (State Machine)
-Bot vận hành theo máy trạng thái nhận diện thị giác máy tính OpenCV (Template Matching đa tỉ lệ kết hợp dải màu HSV chuẩn xác 100%):
+Bot vận hành theo máy trạng thái nhận diện thị giác máy tính OpenCV (Multi-scale Flex Matching kết hợp dải màu HSV và mẫu ảnh chuẩn xác 100%):
 
 1. **Sảnh khởi đầu (Hình 6):**  
    - Tự động phát hiện nút màu cam **"Bắt Đầu Phiêu Lưu!"**.
    - Bấm nút và chờ 2.0 giây để tải vào màn mê cung.
-2. **Di chuyển trong mê cung (Hình 3 & Hình 4):**  
-   - Nhận diện nút tròn xanh ngọc **"Tiến Lên"** (kèm icon đuốc).
+2. **Di chuyển trong mê cung (Hình 3, 4, 10, 12, 14, 15):**  
+   - Nhận diện nút tròn xanh ngọc **"Tiến Lên"** (kèm icon ngọn đuốc) trên mọi chặng hành trình:
+     - Chặng sơ cấp 1, 2: Chỉ có nút Tiến Lên ở giữa.
+     - Chặng nâng cao 11+: Xuất hiện thêm nút **"Ba Lô"** bên trái, nút **"Lv.1"** bên phải và số lượng đuốc tiêu hao tăng lên (12, 40, 50 đuốc...).
    - Bấm nút và **chờ đúng 2.0 giây** nhịp bước đi của nhân vật (tránh hoàn toàn việc spam click vô ích gây lag).
 3. **Thu thập bảo vật / cổ vật (Hình 1, 5, 8, 9):**  
    - Dù là đồ tier thấp (D, C) hay tier cao (B, A, Siêu hiếm, Huyền thoại), popup đều hiển thị dòng chữ *"Chạm điểm bất kì để tiếp tục"*.
@@ -168,6 +170,8 @@ Bot vận hành theo máy trạng thái nhận diện thị giác máy tính Ope
    - Khi chiến đấu thất bại, màn hình kết quả *"Phiêu Lưu Kết Thúc"* xuất hiện.
    - Bot tự động bấm nút màu xanh lá **"Chấp Nhận"**.
    - **Chờ đúng 2.0 giây** để game thoát ra sảnh chính, sau đó tự động bắt đầu lại vòng đi mới từ đầu đến vô tận.
+6. **Tự động khôi phục từ Menu Thoát / Tạm dừng ngoài ý muốn (Hình 11):**  
+   - Nếu bảng tạm dừng *"Kết Thúc Lượt / Tiếp Tục / Lưu & Rời Đi"* vô tình bị mở, bot tự động nhận diện và bấm ngay nút **"Tiếp Tục"** để trở lại mê cung mà không bao giờ bị dừng cuộc chơi.
 
 ---
 
@@ -179,17 +183,19 @@ Khác với các phần mềm auto click thông thường chiếm giữ chuột 
 
 ---
 
-### 🎯 3. Cơ chế tự động định vị & quét màn hình chuẩn xác 100%
+### 🎯 3. Cơ chế tự động định vị & quét màn hình chuẩn xác (FLEX & DPI Engine)
 Bạn không cần phải căn chỉnh toạ độ thủ công, bot tự động tính toán toạ độ chuẩn xác trên mọi thiết lập:
+- **Tương thích hoàn hảo Đa Màn Hình & DPI Scaling (Per-Monitor V2 DPI Awareness):**  
+  Tự động kích hoạt cờ nhận diện DPI cấp hệ thống (`SetProcessDpiAwarenessContext(-4)`) ngay khi khởi động và sử dụng API Win32 `DwmGetWindowAttribute` (chế độ `DWMWA_EXTENDED_FRAME_BOUNDS = 9`). Nhờ đó, bot lấy **100% pixel vật lý thực tế** trên mọi màn hình phụ (kể cả đặt ở độ phân giải 125%, 150% DPI), loại bỏ hoàn toàn lỗi Windows ảo hoá làm cắt cụt đáy màn hình khiến mất nút "Tiến Lên".
 - **Tự động nhận diện cửa sổ giả lập:** Quét và kết nối đúng cửa sổ BlueStacks 5, LDPlayer 9/5/4, MuMu Player, NoxPlayer, MEmu theo tiêu đề và tên tiến trình (`get_process_name_by_hwnd`).
 - **Tự bù trừ viền tiêu đề & thanh công cụ:** Tự động trừ thanh tiêu đề trên cùng (title bar ~32px) và thanh công cụ sidebar bên phải (~44-50px) theo từng dòng giả lập để xác định đúng vùng hiển thị game (`Game Viewport`).
-- **Loại trừ dải đen hai bên sườn (Pillarbox Detection):** Nếu bạn vô tình kéo dãn cửa sổ giả lập theo chiều ngang, bot tự động quét và cắt bỏ dải đen hai bên, giữ nguyên tỉ lệ khung hình chuẩn 9:16.
-- **Co dãn Template thích ứng (Multi-scale Adaptive):** Tất cả các mẫu template nhận diện (Bắt đầu, Tiến lên, Chiến đấu, Chấp nhận, Popup) tự động co dãn theo tỉ lệ chiều rộng thực tế (`scale = width / 405.0`), giúp bot bấm trúng đích 100% dù bạn phóng to, thu nhỏ hay đặt giả lập ở bất kỳ góc nào trên màn hình.
+- **Co dãn Template thích ứng (Multi-scale Flex Matching):** Tất cả các mẫu template nhận diện (Bắt đầu, Tiến lên, Chiến đấu, Chấp nhận, Tiếp tục, Popup) tự động co dãn theo tỉ lệ chiều rộng thực tế, giúp bot bấm trúng đích 100% dù bạn phóng to, thu nhỏ hay kéo dãn cửa sổ giả lập.
 
 ---
 
 ### 🛡️ 4. Hệ thống Chống Treo đa tầng (Watchdog Protection)
-- **Chống kẹt màn hình lạ (> 3.5s):** Nếu mạng lag, có thông báo đột xuất hoặc bảng quà tặng che khuất quá 3.5 giây, bot tự động chạm nhẹ vào điểm an toàn giữa màn hình để giải phóng giao diện.
+- **Điểm chạm an toàn tuyệt đối:** Điểm chạm giải phóng popup và watchdog chống treo được đặt cố định tại **bức tường đá góc trên bên trái** $(X = 0.15, Y = 0.35)$, tuyệt đối không chạm vào nút "X" màu trắng ở đáy màn hình $(X = 0.50, Y = 0.95)$, loại bỏ hoàn toàn nguy cơ vô tình kích hoạt menu thoát trận.
+- **Chống kẹt màn hình lạ (> 3.5s):** Nếu mạng lag, có thông báo đột xuất hoặc bảng quà tặng che khuất quá 3.5 giây, bot tự động chạm nhẹ vào điểm an toàn để giải phóng giao diện.
 - **Chống mất tiêu điểm (> 8.0s):** Tự động kích hoạt đưa cửa sổ giả lập lên phía trước (`activate_window`) và đồng bộ lại Game Viewport.
 - **Phát hiện kẹt trạng thái / Hết Đuốc:** Nếu bấm nút "Tiến Lên" quá 4 lần liên tiếp mà cảnh không dịch chuyển, bot sẽ cảnh báo lên màn hình console và thử giải phóng trung tâm.
 
