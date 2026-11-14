@@ -111,3 +111,22 @@ PHIEULUU_DELAY_AFTER_RESET   = 2.00   # Chờ 2s thoát sảnh bắt đầu loop
 - **Không chiếm chuột 100% (`restore_cursor=True`)**: Bot chỉ mượn chuột khoảng 0.08 giây để click bằng Win32 API rồi trả ngay về vị trí ban đầu của bạn. Bạn thoải mái lướt web, làm việc, xem phim mà không lo bị chuột giật hay kẹt vào game.
 - **Tương thích Đa Màn Hình & DPI Scaling**: Tích hợp chế độ `Per-Monitor V2 DPI Awareness` cùng API `DwmGetWindowAttribute (DWMWA_EXTENDED_FRAME_BOUNDS)`, đảm bảo chụp trọn vẹn 100% pixel vật lý của cửa sổ giả lập trên mọi màn hình phụ (kể cả khi màn hình đặt tỉ lệ phóng to 125% hoặc 150%), triệt tiêu hoàn toàn lỗi cắt cụt đáy màn hình.
 - **Quét FLEX đa tỉ lệ**: Tự động đo đạc kích thước thực tế của cửa sổ game, nhận diện tâm nút thực tế và click chính xác dù bạn phóng to hay thu nhỏ cửa sổ.
+
+---
+
+## 6. ⚠️ Cảnh Báo Quan Trọng: Che Khuất & Thu Nhỏ Cửa Sổ
+
+> [!WARNING]
+> **CỬA SỔ GIẢ LẬP PHẢI ĐƯỢC HIỂN THỊ TRÊN MÀN HÌNH (KHÔNG BỊ CHE KHUẤT VÀ KHÔNG BỊ MINIMIZE):**
+> 1. **Bản chất hoạt động:** Bot dùng thị giác máy tính OpenCV (chụp trực tiếp những gì đang hiển thị trên màn hình Windows) và dùng chuột Win32 để click.
+> 2. **Nếu cửa sổ game bị cửa sổ khác CHE ĐÈ LÊN (Chrome, YouTube, Word...):**
+>    - Bot **không thể nhìn xuyên thấu** qua cửa sổ khác. Khi bị che đè, bot sẽ chụp nhầm nội dung của cửa sổ đè phía trên $\rightarrow$ Không thể nhận diện được nút "Tiến Lên" hay "Bắt Đầu" (trạng thái `UNKNOWN`).
+>    - Con trỏ chuột khi click sẽ **bấm nhầm vào cửa sổ nằm đè bên trên** (ví dụ click nhầm vào tab trình duyệt hoặc nút trên website bạn đang xem).
+> 3. **Nếu Minimize (thu nhỏ xuống Taskbar):** Windows ngưng hoàn toàn việc render hình ảnh vào VRAM $\rightarrow$ Bot hoàn toàn không thấy gì để chạy.
+> 4. **Cơ chế tự cứu của Bot:** Nếu bị kẹt quá 8 giây, bot sẽ tự động gọi lệnh kích hoạt cửa sổ (`activate_window`) để đưa giả lập lên trên cùng (Foreground). Tuy nhiên, để auto hoạt động ổn định nhất, cửa sổ game cần được bố trí không bị che đè.
+>
+> 💡 **CÁCH BỐ TRÍ MÀN HÌNH CHUẨN ĐỂ VỪA AUTO VỪA LÀM VIỆC / LƯỚT WEB:**
+> - **Nếu có 2 màn hình (Khuyên dùng nhất):** Kéo cửa sổ giả lập sang **Màn hình phụ (Monitor 2)** và để nó hiển thị rõ ràng, không bị cửa sổ nào che. Bạn thoải mái lướt web, làm việc, xem YouTube toàn màn hình trên **Màn hình chính (Monitor 1)**. Nhờ tính năng trả chuột tự động sau ~0.08s, bạn dùng chuột và gõ phím ở màn hình 1 hoàn toàn bình thường mà không bị ảnh hưởng!
+> - **Nếu dùng 1 màn hình đơn:** Chia đôi màn hình bằng phím tắt Windows (Bấm `Windows + Phím sang phải` cho giả lập, `Windows + Phím sang trái` cho trình duyệt Chrome) hoặc thu nhỏ giả lập đặt cố định ở một góc màn hình, **đảm bảo 2 cửa sổ không đè lên nhau**.
+> - **Chạy nhiều giả lập (`coc1`, `coc2`, `coc3`):** Xếp các cửa sổ giả lập cạnh nhau (không đè lên nhau). Click chuột vào cửa sổ muốn auto rồi nhấn `Ctrl + Q`.
+

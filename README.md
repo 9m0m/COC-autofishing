@@ -215,11 +215,21 @@ Bạn không cần phải căn chỉnh toạ độ thủ công, bot tự động
 | **`ESC`** | **[ĐANG CHẠY]** | **TẠM DỪNG (Pause)**: Lập tức dừng quét và giải phóng chuột hoàn toàn để bạn chat/lướt web. |
 | **`ESC`** | **[TẠM DỪNG]** | **THOÁT HẲN**: Nhấn ESC lần thứ 2 khi bot đang tạm dừng để tắt tool an toàn và xuất bảng tổng kết. |
 
-#### ⚠️ Những điều cần lưu ý quan trọng:
-1. **Chạy nhiều giả lập cùng lúc (`coc1`, `coc2`, `coc3`)**: Trước khi nhấn `Ctrl + Q`, bạn chỉ cần click chuột vào cửa sổ giả lập muốn chạy để Active/Focus. Bot sẽ tự động ưu tiên cửa sổ đang được chọn!
-2. **Không thu nhỏ (Minimize) cửa sổ giả lập xuống Taskbar:** Bạn có thể để cửa sổ ở góc màn hình, để ở màn hình phụ hoặc để cửa sổ khác đè lên một phần, nhưng không được Minimize xuống thanh taskbar vì Windows sẽ ngưng render hình ảnh vào VRAM.
-3. **Tắt chế độ Tiết kiệm tài nguyên (Eco Mode trên BlueStacks):** Nhấn `Ctrl + Shift + F` trên BlueStacks để tắt Eco Mode, đảm bảo game chạy ổn định 60 FPS khi ở chế độ nền.
-4. **Di chuyển hoặc thu phóng cửa sổ:** Nhờ thuật toán Quét FLEX đa tỉ lệ, nếu bạn kéo cửa sổ giả lập sang vị trí khác hoặc phóng to/thu nhỏ, bot sẽ tự động tính toán lại tâm nút thực tế mà không bị lệch chuột.
+#### ⚠️ Những điều cần lưu ý ĐẶC BIỆT QUAN TRỌNG (Về việc che khuất cửa sổ):
+> [!WARNING]
+> **CỬA SỔ GIẢ LẬP PHẢI ĐƯỢC HIỂN THỊ TRÊN MÀN HÌNH (KHÔNG BỊ CHE KHUẤT VÀ KHÔNG BỊ MINIMIZE):**
+> 1. **Bản chất kỹ thuật:** Bot hoạt động bằng thị giác máy tính (chụp trực tiếp pixel thực tế đang hiển thị trên màn hình Windows) và điều khiển con trỏ chuột (`restore_cursor=True`).
+> 2. **Nếu cửa sổ game bị cửa sổ khác CHE ĐÈ LÊN (Chrome, YouTube, Word...):**
+>    - Bot **không thể nhìn xuyên thấu** qua cửa sổ khác. Khi bị che, bot sẽ chụp nhầm hình ảnh của cửa sổ đè bên trên $\rightarrow$ Không thể nhận diện được nút "Tiến Lên" hay "Bắt Đầu" (trả về trạng thái `UNKNOWN`).
+>    - Cú click chuột sẽ **chạm nhầm vào cửa sổ nằm đè phía trên** thay vì bấm vào game.
+> 3. **Nếu thu nhỏ (Minimize) xuống Taskbar:** Windows ngưng render hình ảnh vào VRAM, bot sẽ chụp ra màn hình đen hoặc cửa sổ rỗng $\rightarrow$ Hoàn toàn không chạy được.
+> 4. **Cơ chế tự cứu của Bot:** Nếu bị che khuất quá 8.0s, Watchdog của bot sẽ tự động gửi lệnh `activate_window` để đưa cửa sổ giả lập nổi lên trên cùng (Foreground). Tuy nhiên, để bot chạy liên tục và mượt mà nhất, bạn **bắt buộc phải để cửa sổ giả lập luôn hiển thị**.
+>
+> 💡 **CÁCH BỐ TRÍ ĐỂ VỪA AUTO VỪA LÀM VIỆC / LƯỚT WEB THOẢI MÁI:**
+> - **Nếu có 2 màn hình (Khuyên dùng nhất):** Để cửa sổ giả lập hiển thị trọn vẹn ở **Màn hình phụ (Monitor 2)**. Toàn bộ công việc, lướt web, xem video để ở **Màn hình chính (Monitor 1)**. Vì bot có tính năng trả chuột tức thì sau ~0.08s, bạn thoải mái dùng chuột/gõ phím ở màn hình 1 mà game ở màn hình 2 vẫn tự chạy 100%!
+> - **Nếu chỉ có 1 màn hình:** Dùng tính năng chia đôi màn hình của Windows (Bấm `Windows + Phím sang phải` cho giả lập, `Windows + Phím sang trái` cho trình duyệt Chrome) hoặc thu nhỏ giả lập đặt cố định ở một góc màn hình, **đảm bảo cửa sổ làm việc không đè lên cửa sổ giả lập**.
+> - **Chạy nhiều giả lập (`coc1`, `coc2`, `coc3`):** Xếp các cửa sổ giả lập cạnh nhau (không đè lên nhau). Click chuột vào cửa sổ muốn auto rồi nhấn `Ctrl + Q`.
+> - **Tắt chế độ Tiết kiệm tài nguyên (Eco Mode trên BlueStacks):** Nhấn `Ctrl + Shift + F` trên BlueStacks để tắt Eco Mode, đảm bảo game chạy ổn định 60 FPS khi ở chế độ nền.
 
 ---
 
