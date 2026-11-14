@@ -142,16 +142,76 @@ Kho công cụ tự động hóa độ chính xác cao cho game **Clash of Critt
 ---
 
 ## PHẦN 3: AUTO PHIÊU LƯU CỔ VẬT (COC-autophieuluu)
-- **Sự kiện:** Phiêu Lưu Cổ Vật (Relic Adventure).
-- **Tính năng chính:**
-  1. **Khởi đầu sảnh chính:** Tự động nhận diện và bấm nút *"Bắt Đầu Phiêu Lưu!"*.
-  2. **Di chuyển trong mê cung:** Tự động bấm *"Tiến Lên"* và chờ đúng 2.0s nhịp bước đi (không spam nút).
-  3. **Thu thập bảo vật/cổ vật:** Tự động chờ 1.0s timing hoạt ảnh cho mọi tier (thấp, cao, siêu hiếm, huyền thoại) rồi chạm nhẹ đóng popup.
-  4. **Gặp quái vật chắn đường:** Luôn luôn chọn *"Chiến Đấu"* (bỏ qua tỉ lệ thắng/thua) đúng theo yêu cầu.
-  5. **Kết toán & Reset vòng lặp:** Khi thất bại, tự động bấm *"Chấp Nhận"*, chờ 2.0s thoát ra sảnh chính và bắt đầu lại vòng đi từ đầu.
-  6. **Hệ thống chống treo đa tầng (Watchdog):** Tự động giải phóng kẹt màn hình lạ > 3.5s, kích hoạt lại cửa sổ > 8.0s, phát hiện kẹt khi hết đuốc.
-- **Hướng dẫn chi tiết:** Xem tại **[HUONG_DAN_PHIEULUU.md](HUONG_DAN_PHIEULUU.md)**.
-- **Khởi chạy:** Nhấp đúp file `run_phieuluu.bat` hoặc chạy `dist/auto_phieuluu.exe`.
+
+> **Dành cho Sự Kiện: Phiêu Lưu Cổ Vật (Relic Adventure) - Game Clash of Critters**  
+> Tự động hoá 100% vòng lặp khám phá mê cung, nhặt bảo vật, đánh quái và kết toán reset sảnh.
+
+---
+
+### 🔄 1. Quy trình hoạt động khép kín (State Machine)
+Bot vận hành theo máy trạng thái nhận diện thị giác máy tính OpenCV (Template Matching đa tỉ lệ kết hợp dải màu HSV chuẩn xác 100%):
+
+1. **Sảnh khởi đầu (Hình 6):**  
+   - Tự động phát hiện nút màu cam **"Bắt Đầu Phiêu Lưu!"**.
+   - Bấm nút và chờ 2.0 giây để tải vào màn mê cung.
+2. **Di chuyển trong mê cung (Hình 3 & Hình 4):**  
+   - Nhận diện nút tròn xanh ngọc **"Tiến Lên"** (kèm icon đuốc).
+   - Bấm nút và **chờ đúng 2.0 giây** nhịp bước đi của nhân vật (tránh hoàn toàn việc spam click vô ích gây lag).
+3. **Thu thập bảo vật / cổ vật (Hình 1, 5, 8, 9):**  
+   - Dù là đồ tier thấp (D, C) hay tier cao (B, A, Siêu hiếm, Huyền thoại), popup đều hiển thị dòng chữ *"Chạm điểm bất kì để tiếp tục"*.
+   - Bot **chờ đúng 1.0 giây theo nhịp timing của game** (game khoá cảm ứng trong 1s đầu) rồi mới chạm nhẹ điểm an toàn để đóng popup mượt mà.
+4. **Gặp quái vật chắn đường (Hình 2):**  
+   - Xuất hiện bảng *"Zobo Thủy Thủ chắn đường!"* với 2 thẻ lựa chọn: **Rút Lui** và **Chiến Đấu**.
+   - Bot **luôn luôn chọn Chiến Đấu** (bấm thẻ bên phải có biểu tượng 2 thanh kiếm bắt chéo) bất kể tỉ lệ thắng là bao nhiêu, đúng theo yêu cầu.
+   - Chờ 1.8 giây cho trận đánh diễn ra.
+5. **Kết toán & Reset vòng lặp (Hình 7):**  
+   - Khi chiến đấu thất bại, màn hình kết quả *"Phiêu Lưu Kết Thúc"* xuất hiện.
+   - Bot tự động bấm nút màu xanh lá **"Chấp Nhận"**.
+   - **Chờ đúng 2.0 giây** để game thoát ra sảnh chính, sau đó tự động bắt đầu lại vòng đi mới từ đầu đến vô tận.
+
+---
+
+### 🖱️ 2. Cơ chế KHÔNG CHIẾM CHUỘT 100% (Đa nhiệm lướt web / xem phim)
+Khác với các phần mềm auto click thông thường chiếm giữ chuột liên tục khiến bạn không thể sử dụng máy tính, bot được tích hợp công nghệ **"Chạm tức thì & Trả chuột tự động" (`restore_cursor=True`)**:
+- **Thời gian chạm cực ngắn:** Bot chỉ điều khiển chuột sang cửa sổ game trong khoảng **~0.08 giây** để gửi tín hiệu chạm cảm ứng Android qua Win32 API.
+- **Tự động nhớ và trả chuột về vị trí cũ:** Ngay sau khi nhấc chuột lên, bot **ngay lập tức hoàn trả con trỏ chuột về đúng toạ độ ban đầu** mà bạn đang trỏ trên Windows.
+- **Thoải mái làm việc đa nhiệm:** Bạn hoàn toàn có thể bật auto chạy ngầm, vừa lướt web, làm việc, xem YouTube, gõ văn bản trên màn hình chính (hoặc trên dàn 2 màn hình) mà con trỏ chuột không bao giờ bị giật hay bị kẹt vào game!
+
+---
+
+### 🎯 3. Cơ chế tự động định vị & quét màn hình chuẩn xác 100%
+Bạn không cần phải căn chỉnh toạ độ thủ công, bot tự động tính toán toạ độ chuẩn xác trên mọi thiết lập:
+- **Tự động nhận diện cửa sổ giả lập:** Quét và kết nối đúng cửa sổ BlueStacks 5, LDPlayer 9/5/4, MuMu Player, NoxPlayer, MEmu theo tiêu đề và tên tiến trình (`get_process_name_by_hwnd`).
+- **Tự bù trừ viền tiêu đề & thanh công cụ:** Tự động trừ thanh tiêu đề trên cùng (title bar ~32px) và thanh công cụ sidebar bên phải (~44-50px) theo từng dòng giả lập để xác định đúng vùng hiển thị game (`Game Viewport`).
+- **Loại trừ dải đen hai bên sườn (Pillarbox Detection):** Nếu bạn vô tình kéo dãn cửa sổ giả lập theo chiều ngang, bot tự động quét và cắt bỏ dải đen hai bên, giữ nguyên tỉ lệ khung hình chuẩn 9:16.
+- **Co dãn Template thích ứng (Multi-scale Adaptive):** Tất cả các mẫu template nhận diện (Bắt đầu, Tiến lên, Chiến đấu, Chấp nhận, Popup) tự động co dãn theo tỉ lệ chiều rộng thực tế (`scale = width / 405.0`), giúp bot bấm trúng đích 100% dù bạn phóng to, thu nhỏ hay đặt giả lập ở bất kỳ góc nào trên màn hình.
+
+---
+
+### 🛡️ 4. Hệ thống Chống Treo đa tầng (Watchdog Protection)
+- **Chống kẹt màn hình lạ (> 3.5s):** Nếu mạng lag, có thông báo đột xuất hoặc bảng quà tặng che khuất quá 3.5 giây, bot tự động chạm nhẹ vào điểm an toàn giữa màn hình để giải phóng giao diện.
+- **Chống mất tiêu điểm (> 8.0s):** Tự động kích hoạt đưa cửa sổ giả lập lên phía trước (`activate_window`) và đồng bộ lại Game Viewport.
+- **Phát hiện kẹt trạng thái / Hết Đuốc:** Nếu bấm nút "Tiến Lên" quá 4 lần liên tiếp mà cảnh không dịch chuyển, bot sẽ cảnh báo lên màn hình console và thử giải phóng trung tâm.
+
+---
+
+### 🚀 5. Hướng dẫn sử dụng & Phím tắt điều khiển
+
+#### Cách khởi chạy:
+- **Cách 1 (Khuyên dùng):** Chạy trực tiếp file `dist/auto_phieuluu.exe` (bản đóng gói sẵn, không cần cài Python).
+- **Cách 2:** Nhấp đúp chuột vào file `run_phieuluu.bat`.
+- **Cách 3:** Chạy lệnh: `python auto_phieuluu.py`.
+
+#### Bảng phím tắt toàn cục:
+| Phím tắt | Chức năng | Chi tiết |
+| :---: | :---: | :--- |
+| **`Ctrl + Q`** | **Bật / Tạm dừng** | Nhấn để tạm dừng bot khi bạn muốn tự tay thao tác game; nhấn lại để bot tiếp tục chạy tự động. |
+| **`ESC`** | **Dừng và Thoát** | Dừng hẳn bot ngay lập tức, xuất bảng thống kê (số vòng, bước đi, bảo vật, trận đánh) và thoát an toàn. |
+
+#### ⚠️ Những điều cần lưu ý quan trọng:
+1. **Không thu nhỏ (Minimize) cửa sổ giả lập xuống Taskbar:** Bạn có thể để cửa sổ ở góc màn hình, để ở màn hình phụ hoặc để cửa sổ khác đè lên một phần, nhưng không được Minimize xuống thanh taskbar vì Windows sẽ ngưng render hình ảnh vào VRAM.
+2. **Tắt chế độ Tiết kiệm tài nguyên (Eco Mode trên BlueStacks):** Nhấn `Ctrl + Shift + F` trên BlueStacks để tắt Eco Mode, đảm bảo game chạy ổn định 60 FPS khi ở chế độ nền.
+3. **Di chuyển cửa sổ:** Nếu bạn kéo cửa sổ giả lập sang vị trí khác trên màn hình, bot tự động cập nhật lại toạ độ Game Viewport ở mỗi nhịp quét mà không bị lệch chuột.
 
 ---
 
