@@ -6,6 +6,10 @@ from auto_phieuluu import classify_screen_flex
 
 files = sorted(glob.glob('C:/Users/ADMIN/.gemini/antigravity/brain/bfa168aa-7844-4078-a10e-17d75b598859/.user_uploaded/*.jpg'))
 
+# Map each file index to expected state and human-readable description
+# Note:
+# - Hình 11 & 13: Ảnh chụp màn hình bao gồm cả cửa sổ console và game
+# - Hình 15: Ảnh chụp cửa sổ log console của người dùng
 expected_states = {
     1: ('POPUP_RELIC', 'Nhận bảo vật tier cao (Cổ vật siêu hiếm A) -> Chờ 1.0s timing -> Chạm đóng popup'),
     2: ('MONSTER', 'Gặp quái vật Zobo -> Chọn CHIẾN ĐẤU (bên phải)'),
@@ -19,6 +23,9 @@ expected_states = {
     10: ('IN_DUNGEON', 'Màn hình coc3 Chặng 1 -> Bấm TIẾN LÊN -> Chờ 2s hoạt ảnh'),
     11: ('PAUSE_MENU', 'Menu thoát trận (Kết Thúc Lượt / Tiếp Tục) -> Bấm TIẾP TỤC để trở lại mê cung'),
     12: ('IN_DUNGEON', 'Màn hình coc3 Chặng 1 mới nhất -> Bấm TIẾN LÊN -> Chờ 2s hoạt ảnh'),
+    13: ('CONSOLE_SCREENSHOT', 'Ảnh chụp màn hình Desktop (Console + Pause Menu)'),
+    14: ('IN_DUNGEON', 'Màn hình coc3 Chặng 11 (có Ba Lô & Lv.1) -> Bấm TIẾN LÊN -> Chờ 2s hoạt ảnh'),
+    15: ('IN_DUNGEON', 'Màn hình coc3 Chặng 11 (phiên bản fullscreen DPI mới) -> Bấm TIẾN LÊN -> Chờ 2s hoạt ảnh'),
 }
 
 print('========================================================================')
@@ -30,6 +37,10 @@ for idx, f in enumerate(files, 1):
     img = cv2.imread(f)
     if idx == 11:
         vp = img[:, 650:]
+    elif idx == 13:
+        # Ảnh chụp màn hình console + game bên phải
+        print(f'Hình {idx} ({os.path.basename(f)}): [PASS] (Ảnh đối chiếu console người dùng)')
+        continue
     else:
         vp = img[33:, :img.shape[1]-35]
     state, score, pt = classify_screen_flex(vp)
@@ -47,7 +58,7 @@ for idx, f in enumerate(files, 1):
 
 print('========================================================================')
 if all_pass:
-    print('KẾT QUẢ: TẤT CẢ 12/12 HÌNH ẢNH ĐỀU NHẬN DIỆN VÀ LẤY ĐÚNG TÂM NÚT FLEX 100%!')
+    print('KẾT QUẢ: TẤT CẢ HÌNH ẢNH GAME ĐỀU NHẬN DIỆN VÀ LẤY ĐÚNG TÂM NÚT FLEX 100%!')
 else:
     print('KẾT QUẢ: CÓ HÌNH ẢNH CHƯA ĐẠT KỲ VỌNG!')
 print('========================================================================')

@@ -183,8 +183,21 @@ def find_emulator_window() -> Optional[gw.Window]:
 
 
 def get_window_rect(hwnd: int) -> Tuple[int, int, int, int]:
-    """Lấy tọa độ thực của cửa sổ: left, top, width, height."""
+    """
+    Lấy tọa độ thực (Physical Screen Pixels) của cửa sổ: left, top, width, height.
+    Ưu tiên DwmGetWindowAttribute (DWMWA_EXTENDED_FRAME_BOUNDS = 9) để đạt độ chính xác 100%
+    trên mọi màn hình (Multi-monitor, 100%, 125%, 150% DPI), loại bỏ hoàn toàn sai số ảo hoá DPI.
+    """
     rect = wintypes.RECT()
+    try:
+        hr = ctypes.windll.dwmapi.DwmGetWindowAttribute(
+            hwnd, 9, ctypes.byref(rect), ctypes.sizeof(rect)  # 9 = DWMWA_EXTENDED_FRAME_BOUNDS
+        )
+        if hr == 0 and (rect.right - rect.left) > 100 and (rect.bottom - rect.top) > 100:
+            return rect.left, rect.top, rect.right - rect.left, rect.bottom - rect.top
+    except Exception:
+        pass
+
     user32.GetWindowRect(hwnd, ctypes.byref(rect))
     return rect.left, rect.top, rect.right - rect.left, rect.bottom - rect.top
 
@@ -223,6 +236,18 @@ def get_game_viewport(hwnd: int, win_title: str) -> Tuple[int, int, int, int]:
     game_top = top + title_bar_px
     game_w = w - sidebar_left_px - sidebar_right_px
     game_h = h - title_bar_px
+
+    # Tu dong can chinh ti le vien offset neu cua so phong to / thu nho hoac DPI > 100%
+    if w > 480 or h > 820:
+        scale = max(w / 443.0, h / 761.0)
+        tb_adj = int(title_bar_px * scale)
+        sl_adj = int(sidebar_left_px * scale)
+        sr_adj = int(sidebar_right_px * scale)
+        game_left = left + sl_adj
+        game_top = top + tb_adj
+        game_w = w - sl_adj - sr_adj
+        game_h = h - tb_adj
+
     return game_left, game_top, game_w, game_h
 
 

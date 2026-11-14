@@ -29,7 +29,45 @@ import sys
 import os
 import time
 import threading
+import ctypes
+from ctypes import wintypes
 from typing import Optional, Tuple, Dict, Any
+
+# ==============================================================================
+# THIET LAP MOI TRUONG WINDOWS TRUOC KHI IMPORT BAT KY THU VIEN GUI NAO
+# (Giong 100% auto_cauca de dam bao Per-Monitor V2 DPI Awareness chuan 100%)
+# ==============================================================================
+if sys.platform.startswith("win"):
+    try:
+        ctypes.windll.kernel32.SetConsoleOutputCP(65001)
+        ctypes.windll.kernel32.SetConsoleCP(65001)
+    except Exception:
+        pass
+    try:
+        sys.stdout.reconfigure(encoding="utf-8", errors="replace")
+        sys.stderr.reconfigure(encoding="utf-8", errors="replace")
+    except Exception:
+        pass
+
+# DPI Awareness Context: -4 la DPI_AWARENESS_CONTEXT_PER_MONITOR_AWARE_V2
+try:
+    ctypes.windll.user32.SetProcessDpiAwarenessContext(ctypes.c_void_p(-4))
+except Exception:
+    try:
+        ctypes.windll.shcore.SetProcessDpiAwareness(2)
+    except Exception:
+        ctypes.windll.user32.SetProcessDPIAware()
+
+# Tat QuickEdit cua Windows Console de tranh chuot boi den lam dung tien trinh
+try:
+    kernel32 = ctypes.windll.kernel32
+    hStdin = kernel32.GetStdHandle(-10)
+    mode = ctypes.c_ulong()
+    kernel32.GetConsoleMode(hStdin, ctypes.byref(mode))
+    new_mode = (mode.value & ~0x0040) | 0x0080
+    kernel32.SetConsoleMode(hStdin, new_mode)
+except Exception:
+    pass
 
 import cv2
 import numpy as np
@@ -40,7 +78,6 @@ import keyboard
 import config
 import assets
 from emulator import (
-    setup_windows_environment,
     log,
     safe_unhook_hotkeys,
     sleep_check,
@@ -51,9 +88,6 @@ from emulator import (
     activate_window,
     user32,
 )
-
-# Thiet lap Windows Console & DPI Awareness
-setup_windows_environment()
 
 # Quan ly trang thai (Khoi tao o che do tam dung, giong auto_cauca)
 _stop_event = threading.Event()
@@ -205,34 +239,25 @@ def classify_screen_flex(vp_img: np.ndarray) -> Tuple[str, float, Optional[Tuple
             score, (cx, cy, tw, th) = m
             return "LOBBY", score, (cx, cy)
 
-    # 5. Kiem tra Trong Me Cung - Nut 'Tien Len' (Hình 3, 4)
+    # 5. Kiem tra Trong Me Cung - Nut 'Tien Len' (Hình 3, 4, 10, 11)
     if "tien_len" in tpls:
-        m = find_template_flex(gray, tpls["tien_len"], (0.20, 0.60, 0.80, 0.98), thresh=0.68)
+        m = find_template_flex(gray, tpls["tien_len"], (0.15, 0.50, 0.85, 1.00), thresh=0.65)
         if m:
             score, (cx, cy, tw, th) = m
-            y1 = max(0, cy - th // 2)
-            y2 = min(vh, cy + th // 2)
-            x1 = max(0, cx - tw // 2)
-            x2 = min(vw, cx + tw // 2)
-            roi_cyan = hsv[y1:y2, x1:x2]
-            mask_cyan = cv2.inRange(roi_cyan, np.array([65, 80, 100]), np.array([100, 255, 255]))
-            cyan_px = int(np.count_nonzero(mask_cyan))
-            min_cyan = int(800 * ((vw / 405.0) ** 2))
-            if cyan_px >= min_cyan:
-                return "IN_DUNGEON", score, (cx, cy)
+            return "IN_DUNGEON", score, (cx, cy)
         else:
             # Fallback mau sac: Phat hien contour vong tron xanh ngoc cua nut Tien Len
-            roi_y1 = int(vh * 0.65)
-            roi_y2 = int(vh * 0.95)
-            roi_x1 = int(vw * 0.20)
-            roi_x2 = int(vw * 0.80)
+            roi_y1 = int(vh * 0.55)
+            roi_y2 = int(vh * 0.98)
+            roi_x1 = int(vw * 0.15)
+            roi_x2 = int(vw * 0.85)
             roi_hsv = hsv[roi_y1:roi_y2, roi_x1:roi_x2]
-            mask_cyan = cv2.inRange(roi_hsv, np.array([70, 80, 100]), np.array([95, 255, 255]))
+            mask_cyan = cv2.inRange(roi_hsv, np.array([65, 70, 90]), np.array([100, 255, 255]))
             cnts, _ = cv2.findContours(mask_cyan, cv2.RETR_EXTERNAL, cv2.CHAIN_APPROX_SIMPLE)
-            min_dim = int(35 * (vw / 405.0))
+            min_dim = int(30 * (vw / 405.0))
             for c in cnts:
                 bx, by, bw, bh = cv2.boundingRect(c)
-                if bw >= min_dim and bh >= min_dim and abs(bw - bh) < int(35 * (vw / 405.0)):
+                if bw >= min_dim and bh >= min_dim and abs(bw - bh) < int(40 * (vw / 405.0)):
                     cx = roi_x1 + bx + bw // 2
                     cy = roi_y1 + by + bh // 2
                     return "IN_DUNGEON", 0.90, (cx, cy)
