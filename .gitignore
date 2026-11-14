@@ -17,12 +17,15 @@ dist/
 # Temporary test images & debug crops
 *.png
 !assets/*.png
+!assets_phieuluu/*.png
 all_windows.txt
 
 # Editor / IDE
 .vscode/
 .idea/
 
-# Local Markdown reports (keep only README.md in git)
+# Local Markdown reports (keep README and guides)
 *.md
 !README.md
+!HUONG_DAN_*.md
+!BAO_CAO_*.md

@@ -4,6 +4,7 @@ Kho công cụ tự động hóa độ chính xác cao cho game **Clash of Critt
 
 1. **Auto Câu Cá (Fishing Minigame)**: Tự động giật cần, khóa cứng ô vàng siêu nhỏ 2-pha, tự giải phóng thẻ bài và nhận quà (chi tiết xem bên dưới).
 2. **Auto Rally Sa Hải Mê Thành (Gold Rush)**: Tự động quét và tham gia các cuộc Tổng Tấn Công trên Tổng Mapview, tự đóng popup và nhận thưởng (chi tiết xem riêng tại: **[HUONG_DAN_RALLY.md](HUONG_DAN_RALLY.md)**).
+3. **Auto Phiêu Lưu Cổ Vật (Relic Adventure)**: Tự động đi mê cung, thu thập bảo vật/cổ vật mọi tier, luôn chọn chiến đấu quái vật, tự kết toán và reset vòng lặp với cơ chế chống treo đa tầng (chi tiết xem riêng tại: **[HUONG_DAN_PHIEULUU.md](HUONG_DAN_PHIEULUU.md)**).
 
 ---
 
@@ -129,6 +130,28 @@ Kho công cụ tự động hóa độ chính xác cao cho game **Clash of Critt
 
 3. **Tôi muốn dừng lại để chat Zalo/Discord thì làm thế nào?**
    - Chỉ cần nhấn **`ESC`**. Bot sẽ nhả chuột ngay lập tức. Bạn có thể chat, gõ phím Space thoải mái. Khi nào muốn câu tiếp thì bấm **`Ctrl + Q`**.
+
+---
+
+## PHẦN 2: AUTO RALLY SA HẢI MÊ THÀNH (COC-autorally)
+- **Sự kiện:** Sa Hải Mê Thành (Gold Rush).
+- **Tính năng:** Tự động quét và tham gia các cuộc Tổng Tấn Công trên Tổng Mapview, tự đóng popup và nhận thưởng 50 lon thể lực.
+- **Hướng dẫn chi tiết:** Xem tại **[HUONG_DAN_RALLY.md](HUONG_DAN_RALLY.md)**.
+- **Khởi chạy:** Nhấp đúp file `run_rally.bat` hoặc chạy `dist/auto_rally.exe`.
+
+---
+
+## PHẦN 3: AUTO PHIÊU LƯU CỔ VẬT (COC-autophieuluu)
+- **Sự kiện:** Phiêu Lưu Cổ Vật (Relic Adventure).
+- **Tính năng chính:**
+  1. **Khởi đầu sảnh chính:** Tự động nhận diện và bấm nút *"Bắt Đầu Phiêu Lưu!"*.
+  2. **Di chuyển trong mê cung:** Tự động bấm *"Tiến Lên"* và chờ đúng 2.0s nhịp bước đi (không spam nút).
+  3. **Thu thập bảo vật/cổ vật:** Tự động chờ 1.0s timing hoạt ảnh cho mọi tier (thấp, cao, siêu hiếm, huyền thoại) rồi chạm nhẹ đóng popup.
+  4. **Gặp quái vật chắn đường:** Luôn luôn chọn *"Chiến Đấu"* (bỏ qua tỉ lệ thắng/thua) đúng theo yêu cầu.
+  5. **Kết toán & Reset vòng lặp:** Khi thất bại, tự động bấm *"Chấp Nhận"*, chờ 2.0s thoát ra sảnh chính và bắt đầu lại vòng đi từ đầu.
+  6. **Hệ thống chống treo đa tầng (Watchdog):** Tự động giải phóng kẹt màn hình lạ > 3.5s, kích hoạt lại cửa sổ > 8.0s, phát hiện kẹt khi hết đuốc.
+- **Hướng dẫn chi tiết:** Xem tại **[HUONG_DAN_PHIEULUU.md](HUONG_DAN_PHIEULUU.md)**.
+- **Khởi chạy:** Nhấp đúp file `run_phieuluu.bat` hoặc chạy `dist/auto_phieuluu.exe`.
 
 ---
 

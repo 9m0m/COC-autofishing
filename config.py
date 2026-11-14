@@ -182,3 +182,56 @@ RALLY_FULL_TILE_COOLDOWN: float = 60.0
 # Chế độ hoạt động: False = Focus 100% Tổng Mapview (Khuyên dùng); True = Quét cả Chat
 RALLY_ENABLE_CHAT_SCAN: bool = False
 
+# ==============================================================================
+# 6. CẤU HÌNH CHO AUTO PHIÊU LƯU CỔ VẬT (RELIC ADVENTURE)
+# ==============================================================================
+# Toạ độ tỉ lệ chuẩn (Game Viewport 9:16)
+# Nút "Bắt Đầu Phiêu Lưu!" tại sảnh chính (Hình 6)
+PHIEULUU_START_REL_X: float = 0.570
+PHIEULUU_START_REL_Y: float = 0.855
+
+# Nút "Tiến Lên" trong mê cung (Hình 3, 4)
+PHIEULUU_ADVANCE_REL_X: float = 0.505
+PHIEULUU_ADVANCE_REL_Y: float = 0.820
+
+# Nút "Chiến Đấu" khi gặp quái vật (Hình 2 - luôn chọn chiến đấu)
+PHIEULUU_FIGHT_REL_X: float = 0.700
+PHIEULUU_FIGHT_REL_Y: float = 0.795
+
+# Nút "Chấp Nhận" khi kết toán / thất bại (Hình 7)
+PHIEULUU_SETTLE_REL_X: float = 0.500
+PHIEULUU_SETTLE_REL_Y: float = 0.925
+
+# Vị trí chạm an toàn để đóng popup nhận bảo vật (Hình 1, 5, 8, 9)
+PHIEULUU_DISMISS_REL_X: float = 0.500
+PHIEULUU_DISMISS_REL_Y: float = 0.930
+
+# Vị trí trung tâm an toàn để giải phóng kẹt màn hình
+PHIEULUU_CENTER_REL_X: float = 0.500
+PHIEULUU_CENTER_REL_Y: float = 0.500
+
+# Thời gian chờ (Delays - giây)
+# Chờ hoạt ảnh bước đi khi bấm Tiến Lên (~2s theo yêu cầu)
+PHIEULUU_DELAY_AFTER_ADVANCE: float = 2.00
+
+# Chờ 1s timing trước khi chạm đóng popup bảo vật (yêu cầu: "timing 1s để nó bảo là chạm vào màn hình để tiếp tục")
+PHIEULUU_DELAY_POPUP_TIMING: float = 1.05
+
+# Chờ sau khi đóng popup bảo vật
+PHIEULUU_DELAY_AFTER_DISMISS: float = 0.60
+
+# Chờ hoạt ảnh chiến đấu kết thúc
+PHIEULUU_DELAY_AFTER_FIGHT: float = 1.80
+
+# Chờ sau khi bấm Bắt Đầu Phiêu Lưu vào màn
+PHIEULUU_DELAY_AFTER_START: float = 2.00
+
+# Chờ sau khi bấm Chấp Nhận kết toán thoát ra ngoài để lặp lại từ đầu (~2s theo yêu cầu)
+PHIEULUU_DELAY_AFTER_RESET: float = 2.00
+
+# Cơ chế Chống Treo (Watchdog / Anti-stuck)
+PHIEULUU_WATCHDOG_UNKNOWN_TIMEOUT: float = 3.50    # Chạm an toàn nếu không rõ trạng thái sau 3.5s
+PHIEULUU_WATCHDOG_ACTIVATE_TIMEOUT: float = 8.00   # Kích hoạt lại cửa sổ nếu kẹt sau 8s
+PHIEULUU_SAME_STATE_MAX_RETRIES: int = 4           # Số lần bấm lại tối đa nếu trạng thái không đổi
+
+
