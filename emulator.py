@@ -9,7 +9,7 @@ import time
 import threading
 import ctypes
 from ctypes import wintypes
-from typing import Optional, Tuple
+from typing import Optional, Tuple, Any
 
 import cv2
 import numpy as np
@@ -216,7 +216,7 @@ def get_game_viewport(hwnd: int, win_title: str) -> Tuple[int, int, int, int]:
     return game_left, game_top, game_w, game_h
 
 
-def safe_grab(sct: mss.mss, region: dict) -> Optional[np.ndarray]:
+def safe_grab(sct: Any, region: dict) -> Optional[np.ndarray]:
     """Chụp ảnh một vùng màn hình từ VRAM vào RAM dạng mảng BGR."""
     try:
         raw = sct.grab(region)
@@ -233,7 +233,7 @@ def safe_grab(sct: mss.mss, region: dict) -> Optional[np.ndarray]:
 
 
 def grab_roi(
-    sct: mss.mss,
+    sct: Any,
     gw_box: dict,
     rel_x1: float,
     rel_y1: float,

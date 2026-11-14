@@ -378,7 +378,8 @@ def main() -> None:
     last_known_state_time = time.time()
     same_state_count = 0
 
-    with mss.mss() as sct:
+    mss_factory = getattr(mss, "MSS", mss.mss)
+    with mss_factory() as sct:
         while not _stop_event.is_set():
             # Neu dang tam dung: khong click bat ky thu gi
             if _is_paused:
