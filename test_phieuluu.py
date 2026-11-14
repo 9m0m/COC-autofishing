@@ -17,6 +17,8 @@ expected_states = {
     8: ('POPUP_RELIC', 'Nhận bảo vật tier B (Mèo Xác Ướp) -> Chờ 1.0s timing -> Chạm đóng popup'),
     9: ('POPUP_RELIC', 'Nhận bảo vật tier B huyền thoại -> Chờ 1.0s timing -> Chạm đóng popup'),
     10: ('IN_DUNGEON', 'Màn hình coc3 Chặng 1 -> Bấm TIẾN LÊN -> Chờ 2s hoạt ảnh'),
+    11: ('PAUSE_MENU', 'Menu thoát trận (Kết Thúc Lượt / Tiếp Tục) -> Bấm TIẾP TỤC để trở lại mê cung'),
+    12: ('IN_DUNGEON', 'Màn hình coc3 Chặng 1 mới nhất -> Bấm TIẾN LÊN -> Chờ 2s hoạt ảnh'),
 }
 
 print('========================================================================')
@@ -26,7 +28,10 @@ print('========================================================================'
 all_pass = True
 for idx, f in enumerate(files, 1):
     img = cv2.imread(f)
-    vp = img[33:, :img.shape[1]-35]
+    if idx == 11:
+        vp = img[:, 650:]
+    else:
+        vp = img[33:, :img.shape[1]-35]
     state, score, pt = classify_screen_flex(vp)
     exp_state, desc = expected_states[idx]
     is_ok = (state == exp_state and pt is not None)
@@ -42,7 +47,7 @@ for idx, f in enumerate(files, 1):
 
 print('========================================================================')
 if all_pass:
-    print('KẾT QUẢ: TẤT CẢ 10/10 HÌNH ẢNH ĐỀU NHẬN DIỆN VÀ LẤY ĐÚNG TÂM NÚT FLEX 100%!')
+    print('KẾT QUẢ: TẤT CẢ 12/12 HÌNH ẢNH ĐỀU NHẬN DIỆN VÀ LẤY ĐÚNG TÂM NÚT FLEX 100%!')
 else:
     print('KẾT QUẢ: CÓ HÌNH ẢNH CHƯA ĐẠT KỲ VỌNG!')
 print('========================================================================')

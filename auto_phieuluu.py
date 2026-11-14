@@ -72,82 +72,6 @@ _stats = {
 # Cache template da giai ma trong RAM
 _templates: Optional[Dict[str, np.ndarray]] = None
 
-# Viewport hieu dung
-_effective_vp: Optional[Tuple[int, int, int, int]] = None
-_last_raw_vp: Optional[Tuple[int, int, int, int]] = None
-_last_pillarbox_check: float = 0.0
-
-
-def detect_pillarbox(crop: np.ndarray, black_thresh: Optional[float] = None, min_margin: Optional[int] = None) -> Tuple[int, int]:
-    """
-    Xac dinh do rong dai den (pillarbox) hai ben mep neu cua so bi keo dan ngang.
-    Tra ve: (offset_x, real_w) tinh theo pixel trong crop.
-    """
-    if crop is None or crop.size == 0:
-        return 0, 0
-    if black_thresh is None:
-        black_thresh = getattr(config, "PILLARBOX_BLACK_THRESHOLD", 12.0)
-    if min_margin is None:
-        min_margin = getattr(config, "PILLARBOX_MIN_MARGIN", 15)
-
-    h, w = crop.shape[:2]
-    mid_crop = crop[int(h * 0.20):int(h * 0.80), :]
-    gray = cv2.cvtColor(mid_crop, cv2.COLOR_BGR2GRAY)
-    col_means = np.mean(gray, axis=0)
-    is_black = (col_means <= black_thresh)
-
-    import itertools
-    runs = []
-    idx = 0
-    for is_b, g in itertools.groupby(is_black):
-        count = len(list(g))
-        runs.append((bool(is_b), idx, idx + count - 1, count))
-        idx += count
-
-    left_black_end = 0
-    for is_b, start_c, end_c, count in runs:
-        if is_b and count >= min_margin and start_c < w * 0.45:
-            left_black_end = end_c + 1
-
-    right_black_start = w
-    for is_b, start_c, end_c, count in runs[::-1]:
-        if is_b and count >= min_margin and end_c > w * 0.55:
-            right_black_start = start_c
-
-    offset_x = left_black_end
-    real_w = max(10, right_black_start - left_black_end)
-    return offset_x, real_w
-
-
-def get_effective_viewport(sct: Any, raw_vp: Tuple[int, int, int, int], force_check: bool = False) -> Tuple[int, int, int, int]:
-    """
-    Lay toa do viewport thuc te cua game sau khi loai tru dai den hai ben suon.
-    Tu dong do lai neu kich thuoc hoac vi tri cua so thay doi.
-    """
-    global _effective_vp, _last_raw_vp, _last_pillarbox_check
-    now = time.time()
-    if not force_check and _effective_vp is not None and raw_vp == _last_raw_vp and (now - _last_pillarbox_check < 4.0):
-        return _effective_vp
-
-    gw_l, gw_t, gw_w, gw_h = raw_vp
-    _last_raw_vp = raw_vp
-    _last_pillarbox_check = now
-
-    sample_y = int(gw_t + gw_h * 0.35)
-    sample_h = max(10, int(gw_h * 0.30))
-    sample = safe_grab(sct, {"left": gw_l, "top": sample_y, "width": gw_w, "height": sample_h})
-    if sample is None:
-        _effective_vp = raw_vp
-        return raw_vp
-
-    offset_x, real_w = detect_pillarbox(sample)
-    if offset_x > 0 or real_w < gw_w:
-        _effective_vp = (gw_l + offset_x, gw_t, real_w, gw_h)
-    else:
-        _effective_vp = raw_vp
-    return _effective_vp
-
-
 def _sleep(seconds: float) -> bool:
     """Tam dung co the huy lap tuc bang ESC hoac _stop_event."""
     return sleep_check(seconds, _stop_event)
@@ -245,6 +169,13 @@ def classify_screen_flex(vp_img: np.ndarray) -> Tuple[str, float, Optional[Tuple
     gray = cv2.cvtColor(vp_img, cv2.COLOR_BGR2GRAY)
     hsv = cv2.cvtColor(vp_img, cv2.COLOR_BGR2HSV)
     tpls = load_templates()
+
+    # 0. Kiem tra Menu Thoat / Tam Dung ('Ket Thuc Luot / Tiep Tuc / Luu & Roi Di')
+    if "tiep_tuc" in tpls:
+        m = find_template_flex(gray, tpls["tiep_tuc"], (0.35, 0.70, 0.65, 0.95), thresh=0.70)
+        if m:
+            score, (cx, cy, tw, th) = m
+            return "PAUSE_MENU", score, (cx, cy)
 
     # 1. Kiem tra Man Ket Toan / That Bai (Hình 7 - nut Chap Nhan)
     if "chap_nhan" in tpls:
@@ -435,9 +366,7 @@ def main() -> None:
                 if win:
                     hwnd = win._hWnd
                     win_title = win.title or win_title
-                raw_vp = get_game_viewport(hwnd, win_title)
-                vp = get_effective_viewport(sct, raw_vp, force_check=True)
-                gw_l, gw_t, gw_w, gw_h = vp
+                gw_l, gw_t, gw_w, gw_h = get_game_viewport(hwnd, win_title)
 
                 if is_first_start:
                     log(f"[KHOI DONG] Auto bat dau tren '{win_title}' ({gw_w}x{gw_h})! Nhan ESC bat cu luc nao de TAM DUNG.\n")
@@ -469,14 +398,11 @@ def main() -> None:
                 win_title = win.title
 
             # Lay toan bo kich thuoc game viewport moi nhat
-            raw_vp = get_game_viewport(hwnd, win_title)
-            if raw_vp[2] < 150 or raw_vp[3] < 200:
+            gw_l, gw_t, gw_w, gw_h = get_game_viewport(hwnd, win_title)
+            if gw_w < 150 or gw_h < 200:
                 if _sleep(0.3):
                     continue
                 continue
-
-            vp = get_effective_viewport(sct, raw_vp)
-            gw_l, gw_t, gw_w, gw_h = vp
 
             # Chup anh viewport hien tai
             vp_img = safe_grab(sct, {"left": gw_l, "top": gw_t, "width": gw_w, "height": gw_h})
@@ -504,7 +430,21 @@ def main() -> None:
             # THUC THI HANH DONG THEO TUNG TRANG THAI (FLEX CLICK TOA DO THUC)
             # ------------------------------------------------------------------
 
-            if state == "LOBBY":
+            if state == "PAUSE_MENU":
+                # Menu thoat tran ('Ket Thuc Luot / Tiep Tuc / Luu & Roi Di') dang bi mo
+                if center_pt is not None:
+                    cx = gw_l + center_pt[0]
+                    cy = gw_t + center_pt[1]
+                else:
+                    cx = int(gw_l + gw_w * 0.47)
+                    cy = int(gw_t + gw_h * 0.83)
+
+                log(f"[MENU THOAT] Phat hien bang thoat tran (Do khop: {score:.2f}) -> Flex Click 'Tiep Tuc' ({cx}, {cy}) de tiep tuc phieu luu!")
+                touch_tap(cx, cy, desc="Nut 'Tiep Tuc'")
+                if _sleep(1.2):
+                    continue
+
+            elif state == "LOBBY":
                 # SANH CHINH: Bam 'Bat Dau Phieu Luu!'
                 if center_pt is not None:
                     cx = gw_l + center_pt[0]
@@ -525,10 +465,10 @@ def main() -> None:
                 # TRONG ME CUNG: Bam 'Tien Len'
                 if same_state_count > config.PHIEULUU_SAME_STATE_MAX_RETRIES:
                     log(f"[CANH BAO] Da bam 'Tien Len' {same_state_count} lan lien tiep ma chua doi canh.")
-                    log("[CHONG TREO] Co the DA HET DUOC hoac game dang bi lag -> Cham nhe trung tam man hinh...")
-                    cx = int(gw_l + gw_w * config.PHIEULUU_CENTER_REL_X)
-                    cy = int(gw_t + gw_h * config.PHIEULUU_CENTER_REL_Y)
-                    touch_tap(cx, cy, desc="Cham trung tam giai phong")
+                    log("[CHONG TREO] Co the DA HET DUOC hoac game dang bi lag -> Cham nhe diem an toan...")
+                    cx = int(gw_l + gw_w * config.PHIEULUU_DISMISS_REL_X)
+                    cy = int(gw_t + gw_h * config.PHIEULUU_DISMISS_REL_Y)
+                    touch_tap(cx, cy, desc="Cham an toan giai phong")
                     same_state_count = 0
                     if _sleep(1.0):
                         continue
@@ -556,15 +496,12 @@ def main() -> None:
                 if _sleep(config.PHIEULUU_DELAY_POPUP_TIMING):
                     continue
 
-                # Chon vi tri cham dong popup: Uu tien vi tri chu 'Cham de tiep tuc' hoac day popup
-                if center_pt is not None:
-                    cx = gw_l + center_pt[0]
-                    cy = gw_t + center_pt[1]
-                else:
-                    cx = int(gw_l + gw_w * config.PHIEULUU_DISMISS_REL_X)
-                    cy = int(gw_t + gw_h * config.PHIEULUU_DISMISS_REL_Y)
+                # Cham dong popup tai toa do le trai/tren an toan (X=0.15, Y=0.35)
+                # TUYET DOI khong cham o giua day man hinh vi se trung nut 'X' thoat tran!
+                cx = int(gw_l + gw_w * config.PHIEULUU_DISMISS_REL_X)
+                cy = int(gw_t + gw_h * config.PHIEULUU_DISMISS_REL_Y)
 
-                log(f"-> Cham dong popup bao vat tai tam ({cx}, {cy})")
+                log(f"-> Cham dong popup bao vat tai diem an toan ({cx}, {cy})")
                 touch_tap(cx, cy, desc="Dong popup bao vat")
                 _stats["relics_collected"] += 1
                 log(f"-> Da dong popup (Tong co vat da nhan: {_stats['relics_collected']})")
@@ -620,9 +557,9 @@ def main() -> None:
                 if unknown_duration >= config.PHIEULUU_WATCHDOG_ACTIVATE_TIMEOUT:
                     log(f"[CHONG TREO] Khong ro trang thai qua {unknown_duration:.1f}s -> Kich hoat lai cua so gia lap...")
                     activate_window(hwnd)
-                    cx = int(gw_l + gw_w * config.PHIEULUU_CENTER_REL_X)
-                    cy = int(gw_t + gw_h * config.PHIEULUU_CENTER_REL_Y)
-                    touch_tap(cx, cy, desc="Cham trung tam chong treo (10s)")
+                    cx = int(gw_l + gw_w * config.PHIEULUU_DISMISS_REL_X)
+                    cy = int(gw_t + gw_h * config.PHIEULUU_DISMISS_REL_Y)
+                    touch_tap(cx, cy, desc="Cham an toan chong treo (10s)")
                     last_known_state_time = now - (config.PHIEULUU_WATCHDOG_UNKNOWN_TIMEOUT)
 
                 elif unknown_duration >= config.PHIEULUU_WATCHDOG_UNKNOWN_TIMEOUT:

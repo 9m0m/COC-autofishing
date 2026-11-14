@@ -204,13 +204,15 @@ PHIEULUU_FIGHT_REL_Y: float = 0.795
 PHIEULUU_SETTLE_REL_X: float = 0.500
 PHIEULUU_SETTLE_REL_Y: float = 0.925
 
-# Vị trí chạm an toàn để đóng popup nhận bảo vật (Hình 1, 5, 8, 9)
-PHIEULUU_DISMISS_REL_X: float = 0.500
-PHIEULUU_DISMISS_REL_Y: float = 0.930
+# Vị trí an toàn đóng popup bảo vật & giải phóng giao diện
+# Lưu ý: Tuyệt đối KHÔNG chạm tại Y >= 0.88 ở giữa màn hình (X=0.50) vì đó là vị trí nút 'X' thoát trận của mê cung!
+# Đặt lệch sang lề trái trên (X=0.15, Y=0.35) đảm bảo đóng popup an toàn 100% mà không bao giờ bấm trúng nút 'X'.
+PHIEULUU_DISMISS_REL_X: float = 0.150
+PHIEULUU_DISMISS_REL_Y: float = 0.350
 
-# Vị trí trung tâm an toàn để giải phóng kẹt màn hình
-PHIEULUU_CENTER_REL_X: float = 0.500
-PHIEULUU_CENTER_REL_Y: float = 0.500
+# Vị trí an toàn lề trên màn hình (Dùng cho Watchdog giải phóng kẹt)
+PHIEULUU_CENTER_REL_X: float = 0.150
+PHIEULUU_CENTER_REL_Y: float = 0.350
 
 # Thời gian chờ (Delays - giây)
 # Chờ hoạt ảnh bước đi khi bấm Tiến Lên (~2s theo yêu cầu)
