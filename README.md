@@ -3,8 +3,8 @@
 Kho công cụ tự động hóa độ chính xác cao cho game **Clash of Critters** trên các trình giả lập Android phổ biến (BlueStacks 5, LDPlayer 9 / 5 / 4, MuMu Player, NoxPlayer, MEmu):
 
 1. **Auto Câu Cá (Fishing Minigame)**: Tự động giật cần, khóa cứng ô vàng siêu nhỏ 2-pha, tự giải phóng thẻ bài và nhận quà (chi tiết xem bên dưới).
-2. **Auto Rally Sa Hải Mê Thành (Gold Rush)**: Tự động quét và tham gia các cuộc Tổng Tấn Công trên Tổng Mapview, tự đóng popup và nhận thưởng (chi tiết xem riêng tại: **[HUONG_DAN_RALLY.md](HUONG_DAN_RALLY.md)**).
-3. **Auto Phiêu Lưu Cổ Vật (Relic Adventure)**: Tự động đi mê cung, thu thập bảo vật/cổ vật mọi tier, luôn chọn chiến đấu quái vật, tự kết toán và reset vòng lặp với cơ chế chống treo đa tầng và hỗ trợ đa màn hình chuẩn DPI (chi tiết xem riêng tại: **[HUONG_DAN_PHIEULUU.md](HUONG_DAN_PHIEULUU.md)**).
+2. **Auto Phiêu Lưu Cổ Vật (Relic Adventure)**: Tự động đi mê cung, thu thập bảo vật/cổ vật mọi tier, luôn chọn chiến đấu quái vật, tự kết toán và reset vòng lặp với cơ chế chống treo đa tầng và hỗ trợ đa màn hình chuẩn DPI (chi tiết xem tại: **[HUONG_DAN_PHIEULUU.md](HUONG_DAN_PHIEULUU.md)**).
+3. **Auto Rally Sa Hải Mê Thành (Gold Rush) [Coming Soon]**: Tự động quét và tham gia các cuộc Tổng Tấn Công trên Tổng Mapview (Tính năng đang được hoàn thiện, sẽ ra mắt trong bản cập nhật tới, xem chi tiết tại: **[HUONG_DAN_RALLY.md](HUONG_DAN_RALLY.md)**).
 
 ---
 
@@ -59,28 +59,9 @@ Kho công cụ tự động hóa độ chính xác cao cho game **Clash of Critt
 ### Bước 2: Tải file chạy Auto về máy
 1. Tải bản chạy sẵn mới nhất (chỉ duy nhất 1 file `.exe`, không cần cài thêm Python hay bất kỳ thư viện nào):
    - **Auto Câu Cá**: Chạy file `dist/auto_cauca.exe` hoặc click `run_auto.bat`.
-   - **Auto Rally Sa Hải Mê Thành**: Chạy file `dist/auto_rally.exe` hoặc click `run_rally.bat`.
+   - **Auto Phiêu Lưu Cổ Vật**: Chạy file `dist/auto_phieuluu.exe` hoặc click `run_phieuluu.bat`.
+   - **Auto Rally Sa Hải Mê Thành**: *(Tính năng đang phát triển - Coming Soon)*.
 2. Đặt file chạy ở vị trí thuận tiện trên máy tính (ví dụ: Desktop).
-
----
-
-## ⚡ Hướng dẫn sử dụng Auto Rally (Sa Hải Mê Thành - Gold Rush)
-
-1. **Khởi động game & giả lập**:
-   - Mở game *Clash of Critters* trên BlueStacks 5, LDPlayer, MuMu, Nox hoặc MEmu.
-   - Bạn có thể để màn hình ở:
-     - **Kênh Chat Phe Vàng** (Khuyên dùng: gom 100% rally toàn map).
-     - Hoặc **Mapview Sa Hải Mê Thành** (Quét trực tiếp các ô Tổng Tấn Công chưa tham gia).
-2. **Khởi chạy Auto**:
-   - Chạy file `dist\auto_rally.exe` hoặc click đúp vào `run_rally.bat`.
-   - Tool tự động nhận diện cửa sổ giả lập và tính toán viewport chuẩn xác.
-3. **Cơ chế hoạt động**:
-   - Khi có người mở Rally $\rightarrow$ Tool bấm "Tham gia".
-   - Popup "Đơn Vị Tiêu Chuẩn / Xung Kích" hiện lên $\rightarrow$ Tool bấm nút xanh "Tham gia" ở đáy $\rightarrow$ Chờ chuyển sang "Chờ chấp thuận / Đã tham gia" $\rightarrow$ **Tự động click nút Back nhỏ $\hookleftarrow$** ở góc dưới bên trái để hạ popup về lại Mapview.
-   - Khi kết thúc 5 phút đếm ngược $\rightarrow$ Tool tự động click nút "Xác Nhận" màu xanh để nhận quà (50 lon nước thể lực) và đóng bảng.
-4. **Phím tắt điều khiển**:
-   - **`Ctrl + Q`**: BẬT / TẠM DỪNG bot.
-   - **`ESC`**: DỪNG và THOÁT hoàn toàn.
 
 ---
 
@@ -133,11 +114,12 @@ Kho công cụ tự động hóa độ chính xác cao cho game **Clash of Critt
 
 ---
 
-## PHẦN 2: AUTO RALLY SA HẢI MÊ THÀNH (COC-autorally)
-- **Sự kiện:** Sa Hải Mê Thành (Gold Rush).
-- **Tính năng:** Tự động quét và tham gia các cuộc Tổng Tấn Công trên Tổng Mapview, tự đóng popup và nhận thưởng 50 lon thể lực.
-- **Hướng dẫn chi tiết:** Xem tại **[HUONG_DAN_RALLY.md](HUONG_DAN_RALLY.md)**.
-- **Khởi chạy:** Nhấp đúp file `run_rally.bat` hoặc chạy `dist/auto_rally.exe`.
+## PHẦN 2: AUTO RALLY SA HẢI MÊ THÀNH (COC-autorally) - [COMING SOON]
+
+> ⏳ **TRẠNG THÁI HIỆN TẠI: ĐANG PHÁT TRIỂN & HOÀN THIỆN (COMING SOON)**  
+> - **Sự kiện:** Sa Hải Mê Thành (Gold Rush).
+> - **Tiến độ:** Tính năng tự động quét và tham gia các cuộc Tổng Tấn Công (Rally) trên Tổng Mapview hiện đang được hoàn thiện thuật toán xử lý màu nền đa phe và căn chỉnh khung hình. Bản cập nhật chính thức sẽ sớm ra mắt!
+> - **Chi tiết lộ trình & nghiên cứu:** Xem tại **[HUONG_DAN_RALLY.md](HUONG_DAN_RALLY.md)**.
 
 ---
 
