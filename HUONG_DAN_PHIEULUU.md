@@ -23,20 +23,26 @@ Bot vận hành theo một vòng lặp máy trạng thái (State Machine) thông
    - Dù là đồ tier thấp (D, C) hay tier cao (B, A, Cổ vật siêu hiếm / Huyền thoại), popup đều hiển thị dòng chữ *"Chạm điểm bất kì để tiếp tục"*.
    - Bot **chờ đúng 1.0 giây** theo cơ chế timing của game (game khoá cảm ứng trong 1s đầu) rồi mới chạm nhẹ vào điểm an toàn trên màn hình để đóng popup mượt mà.
 
-4. **Gặp quái vật chắn đường (Hình 2)**:
+4. **Mở nhộng & Nhận quà mốc (Hình 21, 22)**:
+   - Khi tiến trình đạt mốc phần thưởng, game hiển thị màn hình mở nhộng.
+   - Bot tự động nhận diện nút vàng **"Mở Tất Cả"** (hỗ trợ cả tiếng Việt, tiếng Trung và nhận diện cặp nút màu).
+   - Chờ đúng **3.5 giây** cho hoạt ảnh mở nhộng hoàn tất.
+   - Khi bảng kết quả **"Phần Thưởng!"** hiện ra, bot tự động bấm nút xanh lá **"OK"** để đóng bảng quà và tiếp tục vòng lặp mê cung.
+
+5. **Gặp quái vật chắn đường (Hình 2)**:
    - Khi xuất hiện bảng *"Zobo Thủy Thủ chắn đường!"* với 2 lựa chọn **Rút Lui** và **Chiến Đấu**:
    - Bot **luôn luôn chọn Chiến Đấu** (bấm thẻ bên phải có biểu tượng 2 thanh kiếm bắt chéo) bất kể tỉ lệ thắng là bao nhiêu, đúng như bạn yêu cầu.
    - Chờ 1.8 giây cho hoạt ảnh trận đánh diễn ra.
 
-5. **Kết toán & Reset vòng lặp (Hình 7)**:
+6. **Kết toán & Reset vòng lặp (Hình 7)**:
    - Nếu chiến đấu thất bại, màn hình kết quả *"Phiêu Lưu Kết Thúc"* xuất hiện.
    - Bot tự động bấm nút màu xanh lá **"Chấp Nhận"**.
    - **Chờ đúng 2.0 giây** để game thoát hẳn ra sảnh chính, sau đó tự động bắt đầu lại vòng lặp mới từ đầu đến vô tận.
 
-6. **Tự động khôi phục từ Menu Thoát / Tạm dừng ngoài ý muốn (Hình 11)**:
+7. **Tự động khôi phục từ Menu Thoát / Tạm dừng ngoài ý muốn (Hình 11)**:
    - Nếu bảng tạm dừng *"Kết Thúc Lượt / Tiếp Tục / Lưu & Rời Đi"* vô tình bị mở ra, bot tự động nhận diện và bấm ngay nút **"Tiếp Tục"** để trở lại mê cung mà không bao giờ bị dừng cuộc chơi.
 
-7. **Hệ thống Chống Treo đa tầng (Multi-layer Watchdog)**:
+8. **Hệ thống Chống Treo đa tầng (Multi-layer Watchdog)**:
    - **Điểm chạm an toàn tuyệt đối**: Điểm chạm giải phóng popup và watchdog chống treo được đặt cố định tại **bức tường đá góc trên bên trái** $(X = 0.15, Y = 0.35)$, tuyệt đối không chạm vào nút "X" màu trắng ở đáy màn hình $(X = 0.50, Y = 0.95)$, loại bỏ hoàn toàn nguy cơ vô tình kích hoạt menu thoát trận.
    - **Kẹt màn hình lạ > 3.5s**: Tự động chạm nhẹ vào điểm an toàn trên tường đá để giải phóng mọi dialog thông báo, cấp độ mới hoặc quà tặng đột xuất.
    - **Kẹt quá 8.0s**: Tự động kích hoạt lại cửa sổ giả lập (`activate_window`), quét lại toạ độ Game Viewport.

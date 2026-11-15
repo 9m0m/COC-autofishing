@@ -28,6 +28,8 @@ expected_states = {
     18: ('BROWSER_SCREENSHOT', 'Ảnh chụp trình duyệt GitHub'),
     19: ('LOBBY', 'Sảnh chính Phiêu Lưu Cổ Vật (Tiếng Trung: 去探险! / Đa ngôn ngữ) -> Bấm BẮT ĐẦU!'),
     20: ('CONSOLE_SCREENSHOT', 'Ảnh chụp màn hình Console'),
+    21: ('REWARD_EGG', 'Màn hình mở nhộng quà mốc -> Bấm MỞ TẤT CẢ -> Chờ 3.5s hoạt ảnh'),
+    22: ('REWARD_OK', 'Bảng Phần Thưởng sau khi mở nhộng -> Bấm OK -> Chờ 1.3s đóng bảng'),
 }
 
 print('========================================================================')
@@ -45,6 +47,10 @@ for idx, f in enumerate(files, 1):
     elif idx == 19:
         win = img[30:960, 96:648]
         vp = win[33:, :win.shape[1]-38]
+    elif idx == 21:
+        vp = img[33:, :img.shape[1]-38]
+    elif idx == 22:
+        vp = img
     else:
         vp = img[33:, :img.shape[1]-35]
 

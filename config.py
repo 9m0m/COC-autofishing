@@ -204,6 +204,14 @@ PHIEULUU_FIGHT_REL_Y: float = 0.795
 PHIEULUU_SETTLE_REL_X: float = 0.500
 PHIEULUU_SETTLE_REL_Y: float = 0.925
 
+# Nút "Mở Tất Cả" khi mở nhộng quà mốc (Hình 22 - nút vàng bên phải)
+PHIEULUU_UNBOX_REL_X: float = 0.735
+PHIEULUU_UNBOX_REL_Y: float = 0.880
+
+# Nút "OK" khi nhận thưởng quà mốc hoàn tất (Hình 23 - nút xanh lá ở giữa)
+PHIEULUU_OK_REL_X: float = 0.500
+PHIEULUU_OK_REL_Y: float = 0.895
+
 # Vị trí an toàn đóng popup bảo vật & giải phóng giao diện
 # Lưu ý: Tuyệt đối KHÔNG chạm tại Y >= 0.88 ở giữa màn hình (X=0.50) vì đó là vị trí nút 'X' thoát trận của mê cung!
 # Đặt lệch sang lề trái trên (X=0.15, Y=0.35) đảm bảo đóng popup an toàn 100% mà không bao giờ bấm trúng nút 'X'.
@@ -232,6 +240,12 @@ PHIEULUU_DELAY_AFTER_START: float = 2.00
 
 # Chờ sau khi bấm Chấp Nhận kết toán thoát ra ngoài để lặp lại từ đầu (~2s theo yêu cầu)
 PHIEULUU_DELAY_AFTER_RESET: float = 2.00
+
+# Chờ hoạt ảnh mở nhộng quà mốc (~3.5s theo yêu cầu người dùng)
+PHIEULUU_DELAY_AFTER_UNBOX: float = 3.60
+
+# Chờ sau khi bấm OK đóng bảng quà mốc
+PHIEULUU_DELAY_AFTER_OK: float = 1.30
 
 # Cơ chế Chống Treo (Watchdog / Anti-stuck)
 PHIEULUU_WATCHDOG_UNKNOWN_TIMEOUT: float = 3.50    # Chạm an toàn nếu không rõ trạng thái sau 3.5s

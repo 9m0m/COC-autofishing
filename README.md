@@ -80,6 +80,7 @@ Khi trên màn hình mở nhiều phần mềm hoặc nhiều tab giả lập, t
    - Sảnh chính: Bấm nút cam bắt đầu (hỗ trợ cả tiếng Việt, tiếng Trung và dải màu).
    - Trong mê cung: Bấm "Tiến Lên" (hỗ trợ mọi chặng, kể cả chặng 11+ có Ba Lô, Lv.1, đuốc 40-50). Chờ 2.0s hoạt ảnh bước đi.
    - Nhặt bảo vật: Chờ 1.0s timing khóa cảm ứng của game rồi mới click đóng popup.
+   - Quà mốc / Mở nhộng: Tự bấm "Mở Tất Cả", chờ 3.5s hoạt ảnh mở quà và tự bấm "OK" đóng bảng để tiếp tục.
    - Gặp quái: Luôn chọn thẻ "Chiến Đấu".
    - Kết toán: Bấm "Chấp Nhận", chờ reset ra sảnh lặp lại từ đầu.
    - Chống kẹt: Tự giải phóng khi kẹt màn hình lạ, tự bấm "Tiếp Tục" nếu menu thoát vô tình mở ra.

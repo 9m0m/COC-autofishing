@@ -100,6 +100,7 @@ _stats = {
     "relics_collected": 0,
     "fights": 0,
     "settlements": 0,
+    "milestones": 0,
     "start_time": time.time(),
 }
 
@@ -218,7 +219,61 @@ def classify_screen_flex(vp_img: np.ndarray) -> Tuple[str, float, Optional[Tuple
             score, (cx, cy, tw, th) = m
             return "SETTLEMENT", score, (cx, cy)
 
-    # 2. Kiem tra Quai Vat Chan Duong (Hình 2 - the Chien Dau)
+    # 2. Kiem tra Man Hinh Mo Nhong / Qua Moc (Hình 22 - nut Mo Tat Ca)
+    if "mo_tat_ca" in tpls:
+        m = find_template_flex(gray, tpls["mo_tat_ca"], (0.45, 0.80, 0.98, 0.96), thresh=0.75)
+        if m:
+            score, (cx, cy, tw, th) = m
+            return "REWARD_EGG", score, (cx, cy)
+
+    # Fallback da ngon ngu cho REWARD_EGG: Cap nut xanh trai + vang phai o day man hinh
+    y1_btn, y2_btn = int(vh * 0.80), int(vh * 0.96)
+    roi_l = hsv[y1_btn:y2_btn, int(vw * 0.04):int(vw * 0.50)]
+    mask_g = cv2.inRange(roi_l, np.array([35, 120, 140]), np.array([85, 255, 255]))
+    cnts_g, _ = cv2.findContours(mask_g, cv2.RETR_EXTERNAL, cv2.CHAIN_APPROX_SIMPLE)
+
+    roi_r = hsv[y1_btn:y2_btn, int(vw * 0.50):int(vw * 0.96)]
+    mask_y = cv2.inRange(roi_r, np.array([12, 120, 150]), np.array([35, 255, 255]))
+    cnts_y, _ = cv2.findContours(mask_y, cv2.RETR_EXTERNAL, cv2.CHAIN_APPROX_SIMPLE)
+
+    for cg in cnts_g:
+        g_bx, g_by, g_bw, g_bh = cv2.boundingRect(cg)
+        if g_bw < 0.25 * vw or g_bh < 0.03 * vh:
+            continue
+        if not (2.5 <= g_bw / g_bh <= 4.5):
+            continue
+        for cy in cnts_y:
+            y_bx, y_by, y_bw, y_bh = cv2.boundingRect(cy)
+            if y_bw < 0.25 * vw or y_bh < 0.03 * vh:
+                continue
+            if not (2.5 <= y_bw / y_bh <= 4.5):
+                continue
+            if abs(g_by - y_by) < 18 * (vh / 764.0):
+                cx = int(vw * 0.50) + y_bx + y_bw // 2
+                cy = y1_btn + y_by + y_bh // 2
+                return "REWARD_EGG", 0.95, (cx, cy)
+
+    # 3. Kiem tra Bang Phan Thuong / Nut 'OK' (Hình 23)
+    if "btn_ok" in tpls:
+        m = find_template_flex(gray, tpls["btn_ok"], (0.20, 0.82, 0.80, 0.96), thresh=0.88)
+        if m:
+            score, (cx, cy, tw, th) = m
+            if 0.35 <= cx / vw <= 0.65:
+                return "REWARD_OK", score, (cx, cy)
+
+    # Fallback da ngon ngu cho REWARD_OK: Nut xanh la dat o chinh giua day man hinh
+    roi_ok = hsv[int(vh * 0.82):int(vh * 0.96), int(vw * 0.20):int(vw * 0.80)]
+    mask_ok_g = cv2.inRange(roi_ok, np.array([35, 120, 140]), np.array([85, 255, 255]))
+    cnts_ok, _ = cv2.findContours(mask_ok_g, cv2.RETR_EXTERNAL, cv2.CHAIN_APPROX_SIMPLE)
+    for c in cnts_ok:
+        bx, by, bw, bh = cv2.boundingRect(c)
+        if bw >= 0.30 * vw and bh >= 0.03 * vh and (2.5 <= bw / bh <= 4.5):
+            cx = int(vw * 0.20) + bx + bw // 2
+            cy = int(vh * 0.82) + by + bh // 2
+            if 0.40 <= cx / vw <= 0.60:
+                return "REWARD_OK", 0.90, (cx, cy)
+
+    # 4. Kiem tra Quai Vat Chan Duong (Hình 2 - the Chien Dau)
     if "chien_dau" in tpls:
         m = find_template_flex(gray, tpls["chien_dau"], (0.45, 0.55, 0.98, 0.98), thresh=0.68)
         if m:
@@ -298,9 +353,10 @@ def print_banner() -> None:
     print("    1. [Sanh Chinh]    : Tu tim nut & bam 'Bat Dau Phieu Luu!'")
     print("    2. [Trong Me Cung] : Tu tim nut 'Tien Len' + Cho 2s buoc di")
     print("    3. [Nhan Bao Vat]  : Cho 1s timing hoat anh roi cham tiep tuc")
-    print("    4. [Gap Quai Vat]  : Luon luon chon 'Chien Dau' (mac ke ti le)")
-    print("    5. [Ket Toan Thua] : Bam 'Chap Nhan' + Cho 2s reset loop sanh")
-    print("    6. [Chong Treo]    : Tu dong giai phong khi ket la > 3.5s")
+    print("    4. [Qua Moc / Nhong]: Tu dong bam 'Mo Tat Ca' + Cho 3.5s mo & bam 'OK'")
+    print("    5. [Gap Quai Vat]  : Luon luon chon 'Chien Dau' (mac ke ti le)")
+    print("    6. [Ket Toan Thua] : Bam 'Chap Nhan' + Cho 2s reset loop sanh")
+    print("    7. [Chong Treo]    : Tu dong giai phong khi ket la > 3.5s")
     print("-" * 65)
     print("  Phim tat dieu khien (Giong Auto Cau Ca):")
     print("    - [Ctrl + Q] : BAT DAU / TIEP TUC (Resume)")
@@ -319,6 +375,7 @@ def log_stats() -> None:
         f"[THONG KE {time_str}] Vong choi: {_stats['runs_started']} | "
         f"Buoc di: {_stats['advances']} | "
         f"Bao vat: {_stats['relics_collected']} | "
+        f"Qua moc: {_stats['milestones']} | "
         f"Chien dau: {_stats['fights']} | "
         f"Ket toan: {_stats['settlements']}",
         flush=True,
@@ -592,6 +649,38 @@ def main() -> None:
 
                 log(f"[RESET LOOP] Cho {config.PHIEULUU_DELAY_AFTER_RESET}s thoat ra sanh chinh de lap lai tu dau...")
                 if _sleep(config.PHIEULUU_DELAY_AFTER_RESET):
+                    continue
+
+            elif state == "REWARD_EGG":
+                # MAN HINH MO NHONG / TRUNG QUA MOC (Hình 22: Nut 'Mo Tat Ca')
+                if center_pt is not None:
+                    cx = gw_l + center_pt[0]
+                    cy = gw_t + center_pt[1]
+                else:
+                    cx = int(gw_l + gw_w * config.PHIEULUU_UNBOX_REL_X)
+                    cy = int(gw_t + gw_h * config.PHIEULUU_UNBOX_REL_Y)
+
+                log(f"[QUA MOC] Phat hien man hinh mo nhong qua moc (Do khop: {score:.2f}) -> Flex Click 'Mo Tat Ca' ({cx}, {cy})")
+                touch_tap(cx, cy, desc="Nut 'Mo Tat Ca'")
+                log(f"-> Cho {config.PHIEULUU_DELAY_AFTER_UNBOX}s hoat anh no nhong / mo qua...")
+                if _sleep(config.PHIEULUU_DELAY_AFTER_UNBOX):
+                    continue
+
+            elif state == "REWARD_OK":
+                # BANG PHAN THUONG SAU KHI MO QUA (Hình 23: Nut 'OK')
+                if center_pt is not None:
+                    cx = gw_l + center_pt[0]
+                    cy = gw_t + center_pt[1]
+                else:
+                    cx = int(gw_l + gw_w * config.PHIEULUU_OK_REL_X)
+                    cy = int(gw_t + gw_h * config.PHIEULUU_OK_REL_Y)
+
+                log(f"[NHAN THUONG] Xuat hien bang 'Phan Thuong!' (Do khop: {score:.2f}) -> Flex Click 'OK' ({cx}, {cy}) de tiep tuc")
+                touch_tap(cx, cy, desc="Nut 'OK' phan thuong")
+                _stats["milestones"] += 1
+                log_stats()
+                log(f"-> Cho {config.PHIEULUU_DELAY_AFTER_OK}s tro lai me cung / sanh tiep tuc phieu luu...")
+                if _sleep(config.PHIEULUU_DELAY_AFTER_OK):
                     continue
 
             else:

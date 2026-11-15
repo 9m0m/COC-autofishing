@@ -1,10 +1,11 @@
 # -*- mode: python ; coding: utf-8 -*-
 
+
 a = Analysis(
     ['auto_phieuluu.py'],
     pathex=[],
     binaries=[],
-    datas=[('config.py', '.'), ('emulator.py', '.'), ('assets.py', '.'), ('assets_phieuluu', 'assets_phieuluu')],
+    datas=[('assets_phieuluu', 'assets_phieuluu')],
     hiddenimports=[],
     hookspath=[],
     hooksconfig={},
