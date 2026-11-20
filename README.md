@@ -5,7 +5,7 @@ Tập hợp công cụ tự động hóa cho game Clash of Critters trên các t
 Các công cụ:
 1. **Auto Câu Cá (auto_cauca.exe)**: Tự động giật cần, khóa ô vàng 2 pha, tự nhận quà và đóng thẻ bài.
 2. **Auto Phiêu Lưu Cổ Vật (auto_phieuluu.exe)**: Tự động đi mê cung, nhặt cổ vật mọi tier, luôn chọn chiến đấu, tự kết toán và reset vòng lặp. Chi tiết: [HUONG_DAN_PHIEULUU.md](HUONG_DAN_PHIEULUU.md).
-3. **Auto Rally Sa Hải Mê Thành [Coming Soon]**: Đang phát triển, xem [HUONG_DAN_RALLY.md](HUONG_DAN_RALLY.md).
+3. **Auto Rally Sa Hải Mê Thành (auto_rally.exe)**: Tự động quét toàn cảnh Mapview 4/8 phe, click chuẩn tâm avatar, tự xử lý cả Rally nhiều cuộc và Rally lẻ, tự nhận 50 lon thể lực. Chi tiết: [HUONG_DAN_RALLY.md](HUONG_DAN_RALLY.md).
 
 ---
 
@@ -15,6 +15,7 @@ Tải bản phát hành mới nhất tại: **[GitHub Releases](https://github.c
 
 - `auto_cauca.exe`: File chạy Auto Câu Cá
 - `auto_phieuluu.exe`: File chạy Auto Phiêu Lưu Cổ Vật
+- `auto_rally.exe`: File chạy Auto Rally Sa Hải Mê Thành
 - Chạy trực tiếp trên Windows, không cần cài đặt Python.
 
 ---
@@ -89,9 +90,20 @@ Chi tiết toạ độ và cấu hình xem tại: [HUONG_DAN_PHIEULUU.md](HUONG_
 
 ---
 
-## 6. Auto Rally Sa Hải Mê Thành [Coming Soon]
+## 6. Hướng dẫn nhanh Auto Rally Sa Hải Mê Thành (auto_rally.exe)
 
-Tính năng tự động quét bản đồ Mapview và tham gia Rally hiện đang phát triển. Chi tiết xem tại: [HUONG_DAN_RALLY.md](HUONG_DAN_RALLY.md).
+1. Cài đặt giả lập: Khổ dọc (Portrait 9:16), độ phân giải khuyến nghị `720x1280` hoặc `1080x1920`.
+2. Mở sự kiện Sa Hải Mê Thành trong game, chuyển về màn hình **Tổng Mapview** (nhìn thấy bao quát 4 căn cứ).
+3. Thu nhỏ các ứng dụng khác, click vào giả lập, mở file `auto_rally.exe` (hoặc chạy `run_rally.bat`).
+4. Xem log `[KET NOI]`, nhấn `Ctrl + Q` để bắt đầu.
+5. Bot tự động:
+   - Quét tiêu đề "Tổng Tấn Công!" của mọi phe (Vàng, Xanh, Đỏ, Tím).
+   - Click chuẩn xác tâm Avatar người mở Rally (tránh lệch vào bảng ô đất).
+   - Tự động nhận diện cả 2 dạng: Bảng danh sách nhiều Rally (click Tham gia rồi đóng đỉnh an toàn) và Bảng Rally lẻ (click Tham gia & Back, hoặc nhận diện "Chờ chấp thuận" để cooldown 60s).
+   - Chống văng map: Tuyệt đối không click vào nút X thoát map ở đáy màn hình.
+   - Nhận thưởng: Tự động click "Xác Nhận" nhận 50 lon thể lực khi trận kết thúc.
+
+Chi tiết toạ độ và hướng dẫn đầy đủ xem tại: [HUONG_DAN_RALLY.md](HUONG_DAN_RALLY.md).
 
 ---
 

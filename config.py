@@ -144,10 +144,14 @@ HSV_RALLY_JOINED_GREEN_UPPER = [85, 255, 255]
 RALLY_JOINED_PX_THRESHOLD: int = 150
 
 # Ngưỡng nhận diện Template Matching tiêu đề 'Tổng Tấn Công!' trên Mapview
-# (Giá trị thật: 0.80 - 0.98. Khung cảnh map không có Rally tối đa chỉ đạt 0.49. Ngưỡng 0.66 bắt nhạy 100% không bắt nhầm)
-RALLY_MATCH_THRESHOLD: float = 0.66
+# (Giá trị thật: 0.78 - 1.00. Khung cảnh map không có Rally tối đa chỉ đạt 0.43. Ngưỡng 0.62 bắt nhạy đa mùa 100% không bắt nhầm)
+RALLY_MATCH_THRESHOLD: float = 0.62
 # Dải tỷ lệ quét đa năng của game mobile dọc (hỗ trợ mọi kích cỡ cửa sổ từ thu nhỏ đến cực đại 1080p/2K)
 RALLY_SCALE_FACTORS = [1.00, 1.04, 0.96, 1.08, 0.92, 1.12, 0.88, 0.80, 0.72, 0.67, 1.20, 1.28]
+
+# Ngưỡng nhận diện bảng Tấn Công ô đất (Hình 2 - Không phải Rally, cần tự đóng về Mapview)
+RALLY_TILE_ATTACK_YELLOW_PX: int = 1500  # Nút vàng "Tấn Công" góc dưới bên phải
+RALLY_TILE_ATTACK_RED_PX: int = 1500     # Thanh máu phòng thủ đỏ "Quân phòng thủ"
 
 # E. Cấu hình nhận diện Dải đen (Pillarbox Detection khi cửa sổ bị kéo dãn ngang)
 PILLARBOX_BLACK_THRESHOLD: float = 12.0  # Ngưỡng độ sáng xác định dải đen hai bên sườn

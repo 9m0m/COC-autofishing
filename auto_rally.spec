@@ -5,7 +5,7 @@ a = Analysis(
     ['auto_rally.py'],
     pathex=[],
     binaries=[],
-    datas=[('config.py', '.'), ('emulator.py', '.'), ('assets.py', '.')],
+    datas=[('assets.py', '.'), ('config.py', '.')],
     hiddenimports=[],
     hookspath=[],
     hooksconfig={},

@@ -36,6 +36,7 @@ setup_windows_environment()
 # Quan ly trang thai
 _stop_event = threading.Event()
 _is_paused = True
+_last_esc_time: float = 0.0
 _last_clicked_tile: Optional[Tuple[int, int]] = None
 _full_tiles_cooldown: Dict[Tuple[int, int], float] = {}
 _recently_joined_tiles: Dict[Tuple[int, int], float] = {}
@@ -43,6 +44,7 @@ _last_best_score: float = 0.0
 _effective_vp: Optional[Tuple[int, int, int, int]] = None
 _last_raw_vp: Optional[Tuple[int, int, int, int]] = None
 _last_pillarbox_check: float = 0.0
+_last_logged_pillarbox: Optional[Tuple[int, int]] = None
 
 # He thong Template tieu de 'Tong Tan Cong!' cho 4 phe dia hinh (Vang, Xanh, Do, Tim) tren Mapview
 _rally_templates = assets.get_rally_templates()
@@ -97,7 +99,7 @@ def get_effective_viewport(sct: mss.MSS, raw_vp: Tuple[int, int, int, int], forc
     Lay toa do viewport thuc te cua game sau khi loai tru dai den hai ben suon (Pillarbox).
     Neu cua so bi keo dan ngang hon ty le 9:16 cua mobile, ham se thu hep ve dung vung game.
     """
-    global _effective_vp, _last_raw_vp, _last_pillarbox_check
+    global _effective_vp, _last_raw_vp, _last_pillarbox_check, _last_logged_pillarbox
     now = time.time()
     if not force_check and _effective_vp is not None and raw_vp == _last_raw_vp and (now - _last_pillarbox_check < 10.0):
         return _effective_vp
@@ -117,15 +119,23 @@ def get_effective_viewport(sct: mss.MSS, raw_vp: Tuple[int, int, int, int], forc
     offset_x, real_w = detect_pillarbox(sample)
     if offset_x > 0 or real_w < gw_w:
         _effective_vp = (gw_l + offset_x, gw_t, real_w, gw_h)
-        log(f"[PILLARBOX] Phat hien dai den: Le trai {offset_x}px, Rong thuc {real_w}px (Viewport goc {gw_w}px)")
+        if _last_logged_pillarbox != (offset_x, real_w):
+            log(f"[PILLARBOX] Phat hien dai den: Le trai {offset_x}px, Rong thuc {real_w}px (Viewport goc {gw_w}px)")
+            _last_logged_pillarbox = (offset_x, real_w)
     else:
         _effective_vp = raw_vp
+        _last_logged_pillarbox = (0, gw_w)
     return _effective_vp
 
 
 def _sleep(seconds: float) -> bool:
-    """Tam dung co the huy lap tuc bang ESC."""
-    return sleep_check(seconds, _stop_event)
+    """Tam dung co the huy lap tuc khi nguoi dung bam ESC hoac tam dung bot."""
+    deadline = time.time() + seconds
+    while time.time() < deadline:
+        if _stop_event.is_set() or _is_paused:
+            return True
+        time.sleep(0.02)
+    return False
 
 
 def _is_tile_in_dict(tile: Tuple[int, int], target_dict: Dict[Tuple[int, int], float], threshold: int = 35) -> bool:
@@ -181,91 +191,166 @@ def check_and_claim_reward(sct: mss.MSS, vp: Tuple[int, int, int, int], hwnd: Op
     return False
 
 
-def handle_rally_detail_popup(sct: mss.MSS, vp: Tuple[int, int, int, int]) -> Tuple[bool, bool]:
+def handle_rally_detail_popup(sct: mss.MSS, vp: Tuple[int, int, int, int], hwnd: Optional[int] = None) -> Tuple[bool, bool]:
     """
-    Xu ly popup chi tiet Rally:
-    - Nut xanh ('Tham gia'): bam tham gia -> cho cap nhat -> bam nut Back nho de dong popup.
-    - Nut xam ('Da day' / 'Cho chap thuan'): bam nut Back nho thoat & ghi nho cooldown neu da day.
+    Xu ly popup Rally sau khi click vao o dat tren Mapview:
+    1. Type A: Popup danh sach 'Tong Tan Cong' (co cac the card rally, dong bang cach click vung tren y = 0.12).
+    2. Type B: Popup chi tiet Rally le 'Don Vi Tieu Chuan' (co nut Back ↩ goc trai, nut hanh dong o goc phai).
+       - Neu nut XANH ('Tham gia'): bam tham gia -> bam Back de ve Mapview.
+       - Neu nut XAM ('Cho chap thuan' / 'Da day' / 'Da tham gia'): danh dau cooldown tranh spam -> bam Back.
+    3. Type C: Bang Tan Cong o dat (co nut VANG 'Tan Cong' > 2500px): bam Back ve Mapview.
+    4. Type D: Bang thong tin o dat: click tren cao (0.50, 0.20) de bo chon.
     """
     global _last_clicked_tile, _full_tiles_cooldown, _recently_joined_tiles
-    gw_l, gw_t, gw_w, gw_h = vp
-    x1 = int(gw_l + gw_w * config.RALLY_MAIN_BTN_REL_X_MIN)
-    x2 = int(gw_l + gw_w * config.RALLY_MAIN_BTN_REL_X_MAX)
-    y1 = int(gw_t + gw_h * config.RALLY_MAIN_BTN_REL_Y_MIN)
-    y2 = int(gw_t + gw_h * config.RALLY_MAIN_BTN_REL_Y_MAX)
-
-    crop = safe_grab(sct, {"left": x1, "top": y1, "width": x2 - x1, "height": y2 - y1})
-    if crop is None:
+    if _is_paused or _stop_event.is_set():
         return False, False
 
-    hsv = cv2.cvtColor(crop, cv2.COLOR_BGR2HSV)
-    green_mask = cv2.inRange(
-        hsv,
-        np.array(config.HSV_RALLY_GREEN_LOWER, dtype=np.uint8),
-        np.array(config.HSV_RALLY_GREEN_UPPER, dtype=np.uint8),
-    )
-    green_px = int(np.count_nonzero(green_mask))
+    gw_l, gw_t, gw_w, gw_h = vp
 
-    s_ch = hsv[:, :, 1]
-    v_ch = hsv[:, :, 2]
-    grey_mask = (s_ch < config.RALLY_GREY_SAT_MAX) & (v_ch >= config.RALLY_GREY_VAL_MIN) & (v_ch <= config.RALLY_GREY_VAL_MAX)
-    grey_px = int(np.count_nonzero(grey_mask))
+    screen_crop = safe_grab(sct, {"left": gw_l, "top": gw_t, "width": gw_w, "height": gw_h})
+    if screen_crop is None:
+        return False, False
 
-    join_x = int(gw_l + gw_w * config.RALLY_POPUP_JOIN_X)
-    join_y = int(gw_t + gw_h * config.RALLY_POPUP_JOIN_Y)
+    # 1. KIEM TRA TYPE A: POPUP DANH SACH 'TONG TAN CONG' (Hinh 1, Hinh 4, Hinh 5)
+    tab = screen_crop[int(gw_h * 0.15):int(gw_h * 0.22), int(gw_w * 0.03):int(gw_w * 0.40)]
+    top_dim = screen_crop[int(gw_h * 0.09):int(gw_h * 0.14), int(gw_w * 0.20):int(gw_w * 0.80)]
+    is_multi_sheet = (tab.size > 0 and top_dim.size > 0 and np.mean(tab) < 75.0 and np.mean(top_dim) < 70.0)
+
+    if is_multi_sheet:
+        bx1, bx2 = int(gw_w * 0.55), int(gw_w * 0.95)
+        by1, by2 = int(gw_h * 0.22), int(gw_h * 0.85)
+        card_crop = screen_crop[by1:by2, bx1:bx2]
+        hsv_cards = cv2.cvtColor(card_crop, cv2.COLOR_BGR2HSV)
+
+        # Tim nut xanh 'Tham gia'
+        green_mask = cv2.inRange(hsv_cards, np.array([35, 100, 100]), np.array([85, 255, 255]))
+        contours_g, _ = cv2.findContours(green_mask, cv2.RETR_EXTERNAL, cv2.CHAIN_APPROX_SIMPLE)
+        green_btns = []
+        min_btn_w = int(gw_w * 0.16)
+        for c in contours_g:
+            cx, cy, bw, bh = cv2.boundingRect(c)
+            if bw >= min_btn_w and 18 <= bh <= 55:
+                green_btns.append((bx1 + cx + bw // 2, by1 + cy + bh // 2))
+        green_btns.sort(key=lambda b: b[1])
+
+        joined_any = False
+        if green_btns:
+            btn_x, btn_y = green_btns[0]
+            if hwnd:
+                activate_window(hwnd)
+            touch_tap(gw_l + btn_x, gw_t + btn_y)
+            joined_any = True
+            if _last_clicked_tile is not None:
+                _recently_joined_tiles[_last_clicked_tile] = time.time() + 240.0
+            if _sleep(0.4):
+                return True, True
+        else:
+            if _last_clicked_tile is not None:
+                _full_tiles_cooldown[_last_clicked_tile] = time.time() + config.RALLY_FULL_TILE_COOLDOWN
+                log(f"[RALLY] O ({_last_clicked_tile[0]}, {_last_clicked_tile[1]}) khong con cuoc Rally kha dung (Da day / Dang cho) -> Bo qua {int(config.RALLY_FULL_TILE_COOLDOWN)}s")
+
+        # Dong popup bang cach click khoang trong phia tren (0.50, 0.12)
+        safe_close_x = int(gw_l + gw_w * 0.50)
+        safe_close_y = int(gw_t + gw_h * 0.12)
+        touch_tap(safe_close_x, safe_close_y)
+        _sleep(0.35)
+        check_after = safe_grab(sct, {"left": int(gw_l + gw_w * 0.03), "top": int(gw_t + gw_h * 0.15), "width": int(gw_w * 0.37), "height": int(gw_h * 0.07)})
+        if check_after is not None and np.mean(check_after) < 75.0:
+            touch_tap(safe_close_x, safe_close_y)
+            _sleep(0.25)
+
+        _last_clicked_tile = None
+        return True, joined_any
+
+    # 2. KIEM TRA TYPE B & C: CO NUT BACK `↩` O GOC DUOI BEN TRAI (0.085, 0.940)
     back_x = int(gw_l + gw_w * config.RALLY_POPUP_BACK_X)
     back_y = int(gw_t + gw_h * config.RALLY_POPUP_BACK_Y)
+    crop_back = screen_crop[max(0, int(gw_h * 0.91)):min(gw_h, int(gw_h * 0.97)), max(0, int(gw_w * 0.04)):min(gw_w, int(gw_w * 0.14))]
+    w_mask = (crop_back[:, :, 0] > 180) & (crop_back[:, :, 1] > 180) & (crop_back[:, :, 2] > 180)
+    has_back_btn = (int(np.count_nonzero(w_mask)) >= 80)
 
-    if green_px > config.RALLY_GREEN_PX_THRESHOLD:
-        touch_tap(join_x, join_y)
-        _sleep(config.RALLY_DELAY_AFTER_JOIN_CLICK)
-        touch_tap(back_x, back_y)
-        _sleep(config.RALLY_DELAY_AFTER_BACK_CLICK)
-        if _last_clicked_tile is not None:
-            _recently_joined_tiles[_last_clicked_tile] = time.time() + 240.0
-            _last_clicked_tile = None
-        return True, True
+    if has_back_btn:
+        bx1, bx2 = int(gw_w * 0.52), int(gw_w * 0.92)
+        by1, by2 = int(gw_h * 0.88), int(gw_h * 0.97)
+        btn_crop = screen_crop[by1:by2, bx1:bx2]
+        hsv_btn = cv2.cvtColor(btn_crop, cv2.COLOR_BGR2HSV)
 
-    if grey_px > config.RALLY_GREY_PX_THRESHOLD:
-        if _last_clicked_tile is not None:
-            _full_tiles_cooldown[_last_clicked_tile] = time.time() + config.RALLY_FULL_TILE_COOLDOWN
-            log(f"[RALLY] O ({_last_clicked_tile[0]}, {_last_clicked_tile[1]}) DA DAY (4/4) -> Bo qua {int(config.RALLY_FULL_TILE_COOLDOWN)}s")
+        yellow_px = int(np.count_nonzero(cv2.inRange(hsv_btn, (15, 100, 100), (35, 255, 255))))
+        green_px = int(np.count_nonzero(cv2.inRange(hsv_btn, (35, 100, 100), (85, 255, 255))))
+        grey_px = int(np.count_nonzero(cv2.inRange(hsv_btn, (0, 0, 100), (180, 40, 210))))
+
+        # A) Neu la nut VANG 'Tan Cong' (Hinh 2 tu turn 1) -> Day la bang danh o dat, khong phai Rally!
+        if yellow_px > 2500:
+            log("[MAPVIEW] Mo nham bang Tan Cong o dat -> Dong bang ve Map")
+            touch_tap(back_x, back_y)
+            _sleep(config.RALLY_DELAY_AFTER_BACK_CLICK)
             _last_clicked_tile = None
-        touch_tap(back_x, back_y)
+            return False, False
+
+        # B) Neu la nut XANH 'Tham gia' -> Day la RALLY LE KHA DUNG, THAM GIA NGAY!
+        if green_px > 1500:
+            join_btn_x = int(gw_l + gw_w * 0.72)
+            join_btn_y = int(gw_t + gw_h * 0.93)
+            if hwnd:
+                activate_window(hwnd)
+            touch_tap(join_btn_x, join_btn_y)
+            if _last_clicked_tile is not None:
+                _recently_joined_tiles[_last_clicked_tile] = time.time() + 240.0
+            _sleep(0.4)
+            touch_tap(back_x, back_y)
+            _sleep(config.RALLY_DELAY_AFTER_BACK_CLICK)
+            _last_clicked_tile = None
+            return True, True
+
+        # C) Neu la nut XAM 'Cho chap thuan' / 'Da day' / 'Da tham gia' (Hinh 2 moi) -> Rally le da day/cho!
+        if grey_px > 2000:
+            if _last_clicked_tile is not None:
+                _full_tiles_cooldown[_last_clicked_tile] = time.time() + config.RALLY_FULL_TILE_COOLDOWN
+                log(f"[RALLY] Rally le tai ({_last_clicked_tile[0]}, {_last_clicked_tile[1]}) da day hoac cho chap thuan -> Bo qua {int(config.RALLY_FULL_TILE_COOLDOWN)}s")
+            touch_tap(back_x, back_y)
+            _sleep(config.RALLY_DELAY_AFTER_BACK_CLICK)
+            _last_clicked_tile = None
+            return True, False
+
+    # 3. KIEM TRA BANG THONG TIN O DAT (Hinh Mo Vang Nho / Dong Bang khong co nut)
+    crop_pill = screen_crop[int(gw_h * 0.61):int(gw_h * 0.66), int(gw_w * 0.03):int(gw_w * 0.30)]
+    if crop_pill.size > 0 and np.mean(crop_pill) < 90.0:
+        log("[MAPVIEW] Mo nham bang thong tin o dat -> Bo chon ve Map")
+        touch_tap(int(gw_l + gw_w * 0.50), int(gw_t + gw_h * 0.20))
         _sleep(config.RALLY_DELAY_AFTER_BACK_CLICK)
-        return True, False
+        _last_clicked_tile = None
+        return False, False
 
     return False, False
 
 
-def handle_multi_rally_selection(sct: mss.MSS, vp: Tuple[int, int, int, int]) -> bool:
-    """Xu ly popup danh sach 2-3 cuoc Rally tren cung 1 o dat."""
-    gw_l, gw_t, gw_w, gw_h = vp
-    x1 = int(gw_l + gw_w * 0.15)
-    x2 = int(gw_l + gw_w * 0.85)
-    y1 = int(gw_t + gw_h * 0.25)
-    y2 = int(gw_t + gw_h * 0.75)
-
-    crop = safe_grab(sct, {"left": x1, "top": y1, "width": x2 - x1, "height": y2 - y1})
-    if crop is None:
-        return False
-
-    buttons = _find_green_buttons(crop, min_w_ratio=0.18)
-    if buttons:
-        buttons.sort(key=lambda b: b[1])
-        bx, by, bw, bh = buttons[0]
-        touch_tap(int(x1 + bx + bw // 2), int(y1 + by + bh // 2))
-        _sleep(config.RALLY_DELAY_AFTER_CHAT_CLICK)
-        return True
-    return False
+def _detect_faction_name(crop: np.ndarray) -> str:
+    """Xac dinh ten phe dua tren mau sac dia hinh/vien huy hieu quanh banner."""
+    if crop is None or crop.size == 0:
+        return "Yellow"
+    hsv = cv2.cvtColor(crop, cv2.COLOR_BGR2HSV)
+    hues = hsv[:, :, 0]
+    sats = hsv[:, :, 1]
+    valid = sats > 50
+    yellow_count = int(np.count_nonzero((hues >= 15) & (hues <= 35) & valid))
+    blue_count = int(np.count_nonzero((hues >= 90) & (hues <= 130) & valid))
+    red_count = int(np.count_nonzero(((hues < 15) | (hues >= 165)) & valid))
+    purple_count = int(np.count_nonzero((hues >= 130) & (hues < 165) & valid))
+    counts = {"Yellow": yellow_count, "Blue": blue_count, "Red": red_count, "Purple": purple_count}
+    best = max(counts, key=counts.get)
+    return best if counts[best] > 200 else "Yellow"
 
 
 def scan_and_join_map_rallies(sct: mss.MSS, vp: Tuple[int, int, int, int], hwnd: Optional[int] = None) -> Optional[str]:
     """
-    Quet Tong Mapview tim tieu de 'Tong Tan Cong!' qua Template Matching da ty le.
-    Ho tro dai ty le co dinh quanh 1.0 va tu dong loai tru dai den (Pillarbox) hai ben.
+    Quet Tong Mapview tim tieu de 'Tong Tan Cong!' qua Template Matching da ty le va da mua.
+    Ho tro Grayscale matching da mua giup nhan dien chinh xac tren moi loai dia hinh,
+    va click truc tiep vao tam tieu de Rally de tranh cham lech vao o dat.
     """
     global _last_clicked_tile, _full_tiles_cooldown, _recently_joined_tiles, _last_best_score, _effective_vp
+    if _is_paused or _stop_event.is_set():
+        return None
+
     gw_l, gw_t, gw_w, gw_h = vp
 
     now = time.time()
@@ -278,34 +363,39 @@ def scan_and_join_map_rallies(sct: mss.MSS, vp: Tuple[int, int, int, int], hwnd:
     if map_crop is None:
         return None
 
-    # Tu dong loai tru dai den neu map_crop chua vien den hai ben (Pillarbox)
-    off_x, real_w = detect_pillarbox(map_crop)
-    if off_x > 0 or real_w < gw_w:
-        map_crop = map_crop[:, off_x:off_x + real_w]
-        gw_l += off_x
-        gw_w = real_w
-        _effective_vp = (gw_l, gw_t, gw_w, gw_h)
-        vp = _effective_vp
+    map_gray = cv2.cvtColor(map_crop, cv2.COLOR_BGR2GRAY)
 
     matches = []
     scale_factors = getattr(config, "RALLY_SCALE_FACTORS", [1.00, 1.04, 0.96, 1.08, 0.92, 1.12, 0.88, 0.80, 0.72, 0.67, 1.20, 1.28])
-    match_thresh = getattr(config, "RALLY_MATCH_THRESHOLD", 0.66)
+    match_thresh = getattr(config, "RALLY_MATCH_THRESHOLD", 0.62)
 
     best_val = 0.0
     for tname, tpl in _rally_templates:
+        is_clean = ("clean" in tname)
         tpl_th, tpl_tw = tpl.shape[:2]
+        tpl_gray = cv2.cvtColor(tpl, cv2.COLOR_BGR2GRAY) if is_clean else None
+
         for cur_sc in scale_factors:
             cur_tw = max(10, int(tpl_tw * cur_sc))
             cur_th = max(10, int(tpl_th * cur_sc))
             if cur_tw >= map_crop.shape[1] or cur_th >= map_crop.shape[0]:
                 continue
-            scaled_temp = cv2.resize(
-                tpl,
-                (cur_tw, cur_th),
-                interpolation=cv2.INTER_AREA if cur_sc < 1.0 else cv2.INTER_LINEAR,
-            )
 
-            res = cv2.matchTemplate(map_crop, scaled_temp, cv2.TM_CCOEFF_NORMED)
+            if is_clean:
+                scaled_temp = cv2.resize(
+                    tpl_gray,
+                    (cur_tw, cur_th),
+                    interpolation=cv2.INTER_AREA if cur_sc < 1.0 else cv2.INTER_LINEAR,
+                )
+                res = cv2.matchTemplate(map_gray, scaled_temp, cv2.TM_CCOEFF_NORMED)
+            else:
+                scaled_temp = cv2.resize(
+                    tpl,
+                    (cur_tw, cur_th),
+                    interpolation=cv2.INTER_AREA if cur_sc < 1.0 else cv2.INTER_LINEAR,
+                )
+                res = cv2.matchTemplate(map_crop, scaled_temp, cv2.TM_CCOEFF_NORMED)
+
             min_v, max_v, _, _ = cv2.minMaxLoc(res)
             if max_v > best_val:
                 best_val = float(max_v)
@@ -314,15 +404,21 @@ def scan_and_join_map_rallies(sct: mss.MSS, vp: Tuple[int, int, int, int], hwnd:
             for pt in zip(*locs[::-1]):
                 x, y = int(pt[0]), int(pt[1])
                 if not any(abs(m[0] - x) < cur_tw * 0.6 and abs(m[1] - y) < cur_th * 0.6 for m in matches):
-                    matches.append((x, y, cur_tw, cur_th, tname, float(res[y, x])))
-        if matches:
-            break
+                    faction = tname
+                    if is_clean:
+                        local_crop = map_crop[max(0, y):min(map_crop.shape[0], y + cur_th + int(cur_th * 1.5)), max(0, x):min(map_crop.shape[1], x + cur_tw)]
+                        faction = _detect_faction_name(local_crop)
+                    matches.append((x, y, cur_tw, cur_th, faction, float(res[y, x])))
 
     _last_best_score = best_val
 
     for x, y, cur_tw, cur_th, faction, score in matches:
+        if _is_paused or _stop_event.is_set():
+            return None
+
+        # Click truc tiep vao tam AVATAR nguoi choi dang mo Rally (Tranh click viền banner lam cham lech vao o dat phia tren)
         click_x = int(gw_l + x + cur_tw // 2)
-        click_y = int(my1 + y + cur_th + int(cur_th * 0.7))
+        click_y = int(my1 + y + int(cur_th * 1.85))
         tile = (click_x, click_y)
 
         if _is_tile_in_dict(tile, _recently_joined_tiles) or _is_tile_in_dict(tile, _full_tiles_cooldown):
@@ -355,13 +451,11 @@ def scan_and_join_map_rallies(sct: mss.MSS, vp: Tuple[int, int, int, int], hwnd:
             activate_window(hwnd)
 
         touch_tap(click_x, click_y)
-        _sleep(config.RALLY_DELAY_AFTER_MAP_CLICK)
+        if _sleep(config.RALLY_DELAY_AFTER_MAP_CLICK):
+            return None
 
-        # 1. Neu la o co nhieu cuoc Rally -> Click chon cuoc dau tien
-        handle_multi_rally_selection(sct, vp)
-
-        # 2. Xu ly Popup chi tiet Rally (Tham gia hoac Back nho de ve Mapview)
-        is_pop, is_join = handle_rally_detail_popup(sct, vp)
+        # Xu ly Popup chi tiet Rally (Tham gia hoac dong ve Mapview)
+        is_pop, is_join = handle_rally_detail_popup(sct, vp, hwnd=hwnd)
         if is_pop:
             return "JOINED" if is_join else "FULL"
         return "CLICKED"
@@ -403,9 +497,10 @@ def scan_and_join_chat_rallies(sct: mss.MSS, vp: Tuple[int, int, int, int]) -> b
 
 def main():
     global _is_paused
+    hwnd = None
     print("=" * 60)
     print(" AUTO RALLY - Clash of Critters (Sa Hai Me Thanh)")
-    print(" Phim tat: [Ctrl+Q] Bat dau / Tam dung  |  [ESC] Thoat")
+    print(" Phim tat: [Ctrl+Q] Bat dau / Tam dung  |  [ESC] Tam dung / Thoat")
     print("=" * 60)
 
     def on_toggle_pause():
@@ -413,16 +508,32 @@ def main():
         _is_paused = not _is_paused
         if not _is_paused:
             log("[HOTKEY] [DANG CHAY] Bat dau quet Mapview")
-            activate_window(hwnd)
+            try:
+                if hwnd:
+                    activate_window(hwnd)
+            except Exception:
+                pass
         else:
             log("[HOTKEY] [TAM DUNG] Da tam dung bot")
 
-    def on_stop():
-        log("[HOTKEY] Da bam ESC -> Dang dung bot...")
-        _stop_event.set()
+    def on_esc():
+        global _is_paused, _last_esc_time
+        now = time.time()
+        # Cooldown debounce: tranh key-repeat hoac double-tap ESC lam thoat nham
+        if now - _last_esc_time < 0.8:
+            return
+        _last_esc_time = now
+
+        if not _is_paused:
+            _is_paused = True
+            log("[HOTKEY] [TAM DUNG] Da bam ESC -> Tam dung bot an toan.")
+            log("[HOTKEY] -> Bam [Ctrl+Q] de chay tiep, hoac bam [ESC] lan nua de THOAT han.")
+        else:
+            log("[HOTKEY] [THOAT] Da bam ESC khi dang tam dung -> Dang thoat bot...")
+            _stop_event.set()
 
     keyboard.add_hotkey("ctrl+q", on_toggle_pause)
-    keyboard.add_hotkey("esc", on_stop)
+    keyboard.add_hotkey("esc", on_esc)
 
     win = find_emulator_window()
     if not win:
@@ -483,8 +594,8 @@ def main():
                     _sleep(0.4)
                     continue
 
-                # 3. Kiem tra popup ton dong (chi kich hoat neu dung nut popup that >= 2500px)
-                is_popup, is_joined = handle_rally_detail_popup(sct, vp)
+                # 3. Kiem tra popup ton dong
+                is_popup, is_joined = handle_rally_detail_popup(sct, vp, hwnd=hwnd)
                 if is_popup:
                     if is_joined:
                         rally_join_count += 1
