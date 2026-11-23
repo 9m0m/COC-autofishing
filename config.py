@@ -92,8 +92,8 @@ HSV_RED_UPPER2 = [180, 255, 255]
 # ==============================================================================
 # Timeout tối đa cho 1 ván kéo cá (MINIGAME_SLIDER).
 # Nếu vượt quá giới hạn này mà vẫn chưa kết thúc -> tự động thu cần và nhận thưởng.
-# Trận kéo cá thực tế kéo dài tối đa 8-12s, 15s là ngưỡng an toàn tuyệt đối chống treo.
-MINIGAME_MAX_DURATION: int = 15
+# Giá trị 45s là phao cứu sinh an toàn đủ cho cả cá kỷ lục kéo dài 30s trong game.
+MINIGAME_MAX_DURATION: int = 45
 
 # ==============================================================================
 # 5. TOẠ ĐỘ & CẤU HÌNH CHO AUTO RALLY (SA HẢI MÊ THÀNH - GOLDRUSH)
