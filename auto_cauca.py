@@ -596,20 +596,6 @@ def main():
             # =========================================================
             if state == "READY_TO_CAST":
                 sync_viewport()
-                # 1. Uu tien kiem tra va giai phong nut "Nhan Ngay" truoc de khong quang can de len popup
-                claim_bgr = safe_grab(sct, claim_box)
-                if claim_bgr is not None:
-                    c_hsv = cv2.cvtColor(claim_bgr, cv2.COLOR_BGR2HSV)
-                    c_green = cv2.inRange(
-                        c_hsv,
-                        np.array(config.HSV_READY_GREEN_LOWER, dtype=np.uint8),
-                        np.array(config.HSV_READY_GREEN_UPPER, dtype=np.uint8),
-                    )
-                    if np.count_nonzero(c_green) > 300:
-                        log(f"[PHUC HOI] Phat hien nut Nhan Ngay ({np.count_nonzero(c_green)}px xanh). Tien hanh nhan thuong!")
-                        state = "CLAIM_REWARD"
-                        continue
-
                 bgr = safe_grab(sct, btn_box)
                 if bgr is None:
                     if sleep_check(0.5):
@@ -667,22 +653,6 @@ def main():
             # BUOC 2: CHO CA CAN CAU (WAITING_BITE)
             # =========================================================
             elif state == "WAITING_BITE":
-                # 1. Kiem tra dinh ky nut Nhan Ngay (tranh ket neu popup phan thuong/ky luc hien bat ngo)
-                if now - last_claim_check_waiting > 0.35:
-                    last_claim_check_waiting = now
-                    claim_bgr = safe_grab(sct, claim_box)
-                    if claim_bgr is not None:
-                        c_hsv = cv2.cvtColor(claim_bgr, cv2.COLOR_BGR2HSV)
-                        c_green = cv2.inRange(
-                            c_hsv,
-                            np.array(config.HSV_READY_GREEN_LOWER, dtype=np.uint8),
-                            np.array(config.HSV_READY_GREEN_UPPER, dtype=np.uint8),
-                        )
-                        if np.count_nonzero(c_green) > 300:
-                            log(f"[PHUC HOI] Phat hien nut Nhan Ngay ({np.count_nonzero(c_green)}px xanh) khi dang cho ca can! Tien hanh nhan thuong...")
-                            state = "CLAIM_REWARD"
-                            continue
-
                 bgr = safe_grab(sct, btn_box)
                 if bgr is None:
                     if sleep_check(0.5):
@@ -910,23 +880,10 @@ def main():
                 if sleep_check(0.35):
                     continue
 
-                # Nhip 3: Xac nhan dong - neu nut Nhan Ngay van con thi bam tiep den khi dong han
-                for retry in range(3):
-                    claim_bgr = safe_grab(sct, claim_box)
-                    if claim_bgr is not None:
-                        c_hsv = cv2.cvtColor(claim_bgr, cv2.COLOR_BGR2HSV)
-                        c_green = cv2.inRange(
-                            c_hsv,
-                            np.array(config.HSV_READY_GREEN_LOWER, dtype=np.uint8),
-                            np.array(config.HSV_READY_GREEN_UPPER, dtype=np.uint8),
-                        )
-                        if np.count_nonzero(c_green) > 300:
-                            log(f"  -> Popup van con ({np.count_nonzero(c_green)}px xanh), bam tiep lan {retry + 1}...")
-                            touch_tap(claim_screen_x, claim_screen_y, desc="Nhan Ngay bo sung")
-                            if sleep_check(0.35):
-                                break
-                        else:
-                            break
+                # Nhip 3: Cham them mot nhip dut diem de dam bao dong han moi popup
+                if sleep_check(0.35):
+                    continue
+                touch_tap(claim_screen_x, claim_screen_y, desc="Nhan Ngay dut diem")
 
                 fish_count += 1
                 log(f"[4/4] Nhan thuong thanh cong! Ca thu: {fish_count}")
