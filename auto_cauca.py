@@ -354,6 +354,10 @@ def detect_fishing_button(
             gw_l, gw_t, gw_w, gw_h = gw_vp
             ref_x = int(gw_l + gw_w * ref_rel[0])
             ref_y = int(gw_t + gw_h * ref_rel[1])
+        elif gw_vp:
+            gw_l, gw_t, gw_w, gw_h = gw_vp
+            ref_x = int(gw_l + gw_w * config.BUTTON_REL_X)
+            ref_y = int(gw_t + gw_h * config.BUTTON_REL_Y)
 
         # 1. Quét màu Tím
         purple_mask = cv2.inRange(

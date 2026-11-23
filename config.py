@@ -10,13 +10,13 @@ Cấu hình toạ độ và thông số nhận diện cho Auto Câu Cá Đa Gi�
 # 1. TOẠ ĐỘ TỈ LỆ (THEO CHIỀU RỘNG & CAO CỦA CỬA SỔ GIẢ LẬP)
 # ==============================================================================
 # Tâm nút câu cá (Trên bờ / Dưới nước / Khi cá cắn) - Tọa độ mặc định / Fallback
-BUTTON_REL_X: float = 0.406
-BUTTON_REL_Y: float = 0.814
+BUTTON_REL_X: float = 0.500
+BUTTON_REL_Y: float = 0.824
 
 # Vùng quét tìm nút câu cá thích ứng (Smart Adaptive Button cho BlueStacks, LDPlayer, Nox, MuMu)
-BUTTON_SCAN_REL_X_MIN: float = 0.300
-BUTTON_SCAN_REL_X_MAX: float = 0.700
-BUTTON_SCAN_REL_Y_MIN: float = 0.730
+BUTTON_SCAN_REL_X_MIN: float = 0.350
+BUTTON_SCAN_REL_X_MAX: float = 0.650
+BUTTON_SCAN_REL_Y_MIN: float = 0.740
 BUTTON_SCAN_REL_Y_MAX: float = 0.900
 
 # Vùng thanh trượt mini-game kéo cá (Bao trọn 100% thanh trượt, đường ray và phao câu)
@@ -27,7 +27,7 @@ SLIDER_REL_Y_MAX: float = 0.730
 
 # Vị trí nút "Nhận Ngay" & vùng an toàn đóng popup
 # (Nằm ngoài popup kỷ lục, trúng nút nhận thưởng cá thường, tuyệt đối không chạm nút X)
-CLAIM_REL_X: float = 0.465
+CLAIM_REL_X: float = 0.500
 CLAIM_REL_Y: float = 0.870
 
 # Vị trí tâm thẻ bài (Đóng popup "Kỷ Lục Đội Mới", "Cá Mới", "Kỷ Lục Cá Nhân")
