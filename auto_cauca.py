@@ -231,10 +231,29 @@ def get_game_viewport(hwnd: int, win_title: str) -> Tuple[int, int, int, int]:
             sidebar_left_px = sl
             sidebar_right_px = sr
             break
+
+    # Tu dong nhan dien neu gia lap khong co thanh cong cu sidebar (da an/thu gon, khung hinh 9:16 chuan)
+    client_h = max(1, h - title_bar_px)
+    aspect = w / float(client_h)
+    if aspect < 0.60:
+        sidebar_left_px = 0
+        sidebar_right_px = 0
+
     game_left = left + sidebar_left_px
     game_top = top + title_bar_px
     game_w = w - sidebar_left_px - sidebar_right_px
     game_h = h - title_bar_px
+
+    if (sidebar_left_px > 0 or sidebar_right_px > 0 or title_bar_px > 0) and (w > 480 or h > 820):
+        scale = max(w / 443.0, h / 761.0)
+        tb_adj = int(title_bar_px * scale)
+        sl_adj = int(sidebar_left_px * scale)
+        sr_adj = int(sidebar_right_px * scale)
+        game_left = left + sl_adj
+        game_top = top + tb_adj
+        game_w = w - sl_adj - sr_adj
+        game_h = h - tb_adj
+
     return game_left, game_top, game_w, game_h
 
 
@@ -599,11 +618,12 @@ def main():
                 claim_screen_y = int(top + h * config.CLAIM_REL_Y)
                 card_screen_x = int(left + w * config.CARD_REL_X)
                 card_screen_y = int(top + h * config.CARD_REL_Y)
+                btn_radius = 55
                 btn_box = {
-                    "top": btn_screen_y - 30,
-                    "left": btn_screen_x - 30,
-                    "width": 60,
-                    "height": 60,
+                    "top": btn_screen_y - btn_radius,
+                    "left": btn_screen_x - btn_radius,
+                    "width": btn_radius * 2,
+                    "height": btn_radius * 2,
                 }
                 scan_box = {
                     "left": int(left + w * config.BUTTON_SCAN_REL_X_MIN),
@@ -746,6 +766,8 @@ def main():
                 # 2. Tu dong thich ung vi tri nut cau ca qua dai quet day man hinh
                 scan_bgr = safe_grab(sct, scan_box)
                 bgr = None
+                det_col = None
+                det_area = 0
                 if scan_bgr is not None:
                     det = detect_fishing_button(
                         scan_bgr,
@@ -768,18 +790,20 @@ def main():
                             log(f"[THICH UNG] Khoa tam nut cau: Rel X = {adaptive_btn_rel_x:.3f}, Rel Y = {adaptive_btn_rel_y:.3f} ({det_col})")
                         btn_screen_x = det_x
                         btn_screen_y = det_y
-                        btn_box["left"] = btn_screen_x - 30
-                        btn_box["top"] = btn_screen_y - 30
+                        btn_radius = 55
+                        btn_box["left"] = btn_screen_x - btn_radius
+                        btn_box["top"] = btn_screen_y - btn_radius
 
-                        rel_l = btn_screen_x - 30 - scan_box["left"]
-                        rel_t = btn_screen_y - 30 - scan_box["top"]
+                        rel_l = btn_screen_x - btn_radius - scan_box["left"]
+                        rel_t = btn_screen_y - btn_radius - scan_box["top"]
+                        box_sz = btn_radius * 2
                         if (
                             0 <= rel_l
                             and 0 <= rel_t
-                            and (rel_l + 60) <= scan_box["width"]
-                            and (rel_t + 60) <= scan_box["height"]
+                            and (rel_l + box_sz) <= scan_box["width"]
+                            and (rel_t + box_sz) <= scan_box["height"]
                         ):
-                            bgr = scan_bgr[rel_t : rel_t + 60, rel_l : rel_l + 60]
+                            bgr = scan_bgr[rel_t : rel_t + box_sz, rel_l : rel_l + box_sz]
 
                 if bgr is None:
                     bgr = safe_grab(sct, btn_box)
@@ -790,8 +814,9 @@ def main():
                     continue
                 green_px, grey_px, purple_px = analyze_button_colors(bgr)
 
-                if purple_px > config.PURPLE_PX_THRESHOLD:
-                    log(f"[PHUC HOI] Ca dang can ({purple_px}px tim) -> GIAT CAN NGAY!")
+                is_bite = (det_col == "purple") or (purple_px > config.PURPLE_PX_THRESHOLD)
+                if is_bite:
+                    log(f"[PHUC HOI] Ca dang can ({det_area or purple_px}px tim) -> GIAT CAN NGAY!")
                     fast_tap(btn_screen_x, btn_screen_y)
                     if sleep_check(0.35):
                         continue
@@ -799,7 +824,8 @@ def main():
                     log("[3/4] Quet thanh truot...")
                     continue
 
-                if grey_px > config.GREY_PX_THRESHOLD:
+                is_grey = (det_col == "grey") or (grey_px > config.GREY_PX_THRESHOLD)
+                if is_grey and not is_bite:
                     log(f"[PHUC HOI] Can dang duoi nuoc ({grey_px}px xam) -> Cho ca can...")
                     state = "WAITING_BITE"
                     bite_wait_start = time.time()
@@ -808,7 +834,8 @@ def main():
                     last_heartbeat = now
                     continue
 
-                if green_px > config.GREEN_PX_THRESHOLD:
+                is_green = (det_col == "green") or (green_px > config.GREEN_PX_THRESHOLD)
+                if is_green:
                     log(f"[1/4] Tha can ({green_px}px xanh)...")
                     touch_tap(btn_screen_x, btn_screen_y, desc="Nut quang can")
                     if sleep_check(1.5):
@@ -859,6 +886,8 @@ def main():
                 # 2. Tu dong thich ung vi tri nut cau ca qua dai quet day man hinh
                 scan_bgr = safe_grab(sct, scan_box)
                 bgr = None
+                det_col = None
+                det_area = 0
                 if scan_bgr is not None:
                     det = detect_fishing_button(
                         scan_bgr,
@@ -881,18 +910,20 @@ def main():
                             log(f"[THICH UNG] Khoa tam nut cau: Rel X = {adaptive_btn_rel_x:.3f}, Rel Y = {adaptive_btn_rel_y:.3f} ({det_col})")
                         btn_screen_x = det_x
                         btn_screen_y = det_y
-                        btn_box["left"] = btn_screen_x - 30
-                        btn_box["top"] = btn_screen_y - 30
+                        btn_radius = 55
+                        btn_box["left"] = btn_screen_x - btn_radius
+                        btn_box["top"] = btn_screen_y - btn_radius
 
-                        rel_l = btn_screen_x - 30 - scan_box["left"]
-                        rel_t = btn_screen_y - 30 - scan_box["top"]
+                        rel_l = btn_screen_x - btn_radius - scan_box["left"]
+                        rel_t = btn_screen_y - btn_radius - scan_box["top"]
+                        box_sz = btn_radius * 2
                         if (
                             0 <= rel_l
                             and 0 <= rel_t
-                            and (rel_l + 60) <= scan_box["width"]
-                            and (rel_t + 60) <= scan_box["height"]
+                            and (rel_l + box_sz) <= scan_box["width"]
+                            and (rel_t + box_sz) <= scan_box["height"]
                         ):
-                            bgr = scan_bgr[rel_t : rel_t + 60, rel_l : rel_l + 60]
+                            bgr = scan_bgr[rel_t : rel_t + box_sz, rel_l : rel_l + box_sz]
 
                 if bgr is None:
                     bgr = safe_grab(sct, btn_box)
@@ -903,8 +934,19 @@ def main():
                     continue
                 green_px, grey_px, purple_px = analyze_button_colors(bgr)
 
-                # Can chi thuc su tren bo khi nut XANH va nut XAM da bien mat han (< 300)
-                if green_px > config.GREEN_PX_THRESHOLD and grey_px < 300:
+                # Phat hien ca can (Uu tien truc tiep tu nhan dien thich ung det_col hoac qua nguong pixel tim)
+                is_bite = (det_col == "purple") or (purple_px > config.PURPLE_PX_THRESHOLD)
+                if is_bite:
+                    log(f"[2/4] CA CAN! ({det_area or purple_px}px tim) -> GIAT CAN!")
+                    fast_tap(btn_screen_x, btn_screen_y)
+                    if sleep_check(0.35):
+                        continue
+                    state = "MINIGAME_SLIDER"
+                    log("[3/4] Quet thanh truot...")
+                    continue
+
+                is_green = (det_col == "green") or (green_px > config.GREEN_PX_THRESHOLD and grey_px < 300)
+                if is_green and not is_bite:
                     log(f"[PHUC HOI] Can tren bo ({green_px}px xanh) -> Tha can lai!")
                     state = "READY_TO_CAST"
                     wait_ready_start = time.time()
@@ -914,19 +956,8 @@ def main():
                     log(f"[2/4] Dang cho... Xam: {grey_px} | Tim: {purple_px}")
                     last_heartbeat = now
 
-                # 2. Phat hien ca can
-                if purple_px > config.PURPLE_PX_THRESHOLD:
-                    log(f"[2/4] CA CAN! ({purple_px}px tim) -> GIAT CAN!")
-                    fast_tap(btn_screen_x, btn_screen_y)
-                    if sleep_check(0.35):
-                        continue
-                    state = "MINIGAME_SLIDER"
-                    log("[3/4] Quet thanh truot...")
-                    continue
-
-                # 3. Kiem tra bat thuong: Khong co can duoi nuoc (Xam < 100 va Tim < 100)
-                # Neu keo dai > 3s -> Co the popup phan thuong/the bai dang che hoac click tha can bi hut
-                if grey_px < 100 and purple_px < 100:
+                # 3. Kiem tra bat thuong: Khong co can duoi nuoc > 3s (chi kich hoat khi chac chan khong co ca can)
+                if not is_bite and grey_px < 100 and purple_px < 100 and det_col != "grey":
                     if no_rod_start == 0.0:
                         no_rod_start = now
                     elif now - no_rod_start > 3.0:
