@@ -34,6 +34,9 @@ CLAIM_REL_Y: float = 0.870
 CARD_REL_X: float = 0.500
 CARD_REL_Y: float = 0.480
 
+# Vị trí nút xác nhận giữa màn hình (Nút "Tiếp tục" / "Chia sẻ" / xác nhận thẻ bài đặc biệt)
+CARD_CONFIRM_REL_Y: float = 0.720
+
 # ==============================================================================
 # 2. BÙ SAI SỐ VIỀN CỬA SỔ THEO TỪNG GIẢ LẬP
 # ==============================================================================
@@ -88,9 +91,9 @@ HSV_RED_UPPER2 = [180, 255, 255]
 # 4. GIỚI HẠN THỜI GIAN AN TOÀN
 # ==============================================================================
 # Timeout tối đa cho 1 ván kéo cá (MINIGAME_SLIDER).
-# Nếu vượt quá giới hạn này mà vẫn chưa kết thúc -> tự reset vòng câu mới.
-# Giá trị 45s đủ cho cả cá kỷ lục lớn nhất.
-MINIGAME_MAX_DURATION: int = 45
+# Nếu vượt quá giới hạn này mà vẫn chưa kết thúc -> tự động thu cần và nhận thưởng.
+# Trận kéo cá thực tế kéo dài tối đa 8-12s, 15s là ngưỡng an toàn tuyệt đối chống treo.
+MINIGAME_MAX_DURATION: int = 15
 
 # ==============================================================================
 # 5. TOẠ ĐỘ & CẤU HÌNH CHO AUTO RALLY (SA HẢI MÊ THÀNH - GOLDRUSH)

@@ -599,6 +599,7 @@ def main():
     btn_screen_x, btn_screen_y = 0, 0
     claim_screen_x, claim_screen_y = 0, 0
     card_screen_x, card_screen_y = 0, 0
+    card_confirm_y = 0
     btn_box = {}
     claim_box = {}
     slider_box = {}
@@ -609,7 +610,7 @@ def main():
     def sync_viewport(force: bool = False) -> bool:
         """Tu dong dong bo lai toa do neu cua so gia lap bi di chuyen hoac thay doi kich thuoc."""
         nonlocal left, top, w, h, btn_screen_x, btn_screen_y, claim_screen_x, claim_screen_y
-        nonlocal card_screen_x, card_screen_y, btn_box, claim_box, slider_box, scan_box
+        nonlocal card_screen_x, card_screen_y, card_confirm_y, btn_box, claim_box, slider_box, scan_box
         try:
             cur_left, cur_top, cur_w, cur_h = get_game_viewport(hwnd, win.title)
             if force or (cur_left, cur_top, cur_w, cur_h) != (left, top, w, h):
@@ -622,6 +623,7 @@ def main():
                 claim_screen_y = int(top + h * config.CLAIM_REL_Y)
                 card_screen_x = int(left + w * config.CARD_REL_X)
                 card_screen_y = int(top + h * config.CARD_REL_Y)
+                card_confirm_y = int(top + h * config.CARD_CONFIRM_REL_Y)
                 btn_radius = 55
                 btn_box = {
                     "top": btn_screen_y - btn_radius,
@@ -855,12 +857,14 @@ def main():
                     log(f"[Cho] Xanh: {green_px} | Xam: {grey_px} | Tim: {purple_px}")
                     last_heartbeat = now
 
-                if now - wait_ready_start > 2.5:
+                if now - wait_ready_start > 1.5:
                     log("[GIAI PHONG] Cham giai phong the bai / popup ton du...")
                     touch_tap(card_screen_x, card_screen_y, desc="Giai phong the bai")
-                    time.sleep(0.3)
+                    time.sleep(0.2)
+                    touch_tap(card_screen_x, card_confirm_y, desc="Giai phong xac nhan giua")
+                    time.sleep(0.2)
                     touch_tap(claim_screen_x, claim_screen_y, desc="Giai phong Nhan Ngay")
-                    if sleep_check(0.8):
+                    if sleep_check(0.5):
                         continue
                     wait_ready_start = time.time()
                 else:
@@ -960,19 +964,21 @@ def main():
                     log(f"[2/4] Dang cho... Xam: {grey_px} | Tim: {purple_px}")
                     last_heartbeat = now
 
-                # 3. Kiem tra bat thuong: Khong co can duoi nuoc > 3s (chi kich hoat khi chac chan khong co ca can)
+                # 3. Kiem tra bat thuong: Khong co can duoi nuoc > 2.5s (chi kich hoat khi chac chan khong co ca can)
                 if not is_bite and grey_px < 100 and purple_px < 100 and det_col != "grey":
                     if no_rod_start == 0.0:
                         no_rod_start = now
-                    elif now - no_rod_start > 3.0:
-                        log(f"[GIAI PHOI] Khong co can duoi nuoc (Xam: {grey_px}, Tim: {purple_px}) > 3s -> Tu giai thoat popup/the bai...")
+                    elif now - no_rod_start > 2.5:
+                        log(f"[GIAI PHONG] Khong co can duoi nuoc (Xam: {grey_px}, Tim: {purple_px}) > 2.5s -> Tu giai thoat popup/the bai...")
                         touch_tap(card_screen_x, card_screen_y, desc="Giai phong the bai")
-                        time.sleep(0.3)
+                        time.sleep(0.2)
+                        touch_tap(card_screen_x, card_confirm_y, desc="Giai phong xac nhan giua")
+                        time.sleep(0.2)
                         touch_tap(claim_screen_x, claim_screen_y, desc="Giai phong Nhan Ngay")
                         state = "READY_TO_CAST"
                         wait_ready_start = time.time()
                         no_rod_start = 0.0
-                        if sleep_check(0.8):
+                        if sleep_check(0.5):
                             continue
                         continue
                 else:
@@ -982,12 +988,14 @@ def main():
                 if now - bite_wait_start > 18.0:
                     log("[TIMEOUT] Cho ca can > 18s -> Tu dong giai phong va thu tha lai can...")
                     touch_tap(card_screen_x, card_screen_y, desc="Dong the ton du")
-                    time.sleep(0.3)
+                    time.sleep(0.2)
+                    touch_tap(card_screen_x, card_confirm_y, desc="Xac nhan giua ton du")
+                    time.sleep(0.2)
                     touch_tap(claim_screen_x, claim_screen_y, desc="Nhan Ngay ton du")
                     state = "READY_TO_CAST"
                     wait_ready_start = time.time()
                     no_rod_start = 0.0
-                    if sleep_check(0.8):
+                    if sleep_check(0.5):
                         continue
                     continue
 
@@ -1019,9 +1027,8 @@ def main():
                     cur_t = time.time()
 
                     if cur_t - minigame_start > config.MINIGAME_MAX_DURATION:
-                        log(f"[TIMEOUT] Minigame > {config.MINIGAME_MAX_DURATION}s -> Reset...")
-                        state = "READY_TO_CAST"
-                        wait_ready_start = time.time()
+                        log(f"[TIMEOUT] Minigame > {config.MINIGAME_MAX_DURATION}s -> Thu can va nhan thuong...")
+                        state = "CLAIM_REWARD"
                         break
 
                     s_bgr = safe_grab(sct, slider_box)
@@ -1031,25 +1038,25 @@ def main():
 
                     yellow_range, bobber_x = detect_yellow_and_bobber(s_bgr)
 
-                    # 1. Cap nhat thoi gian nhin thay phao do & kiem tra nut Nhan Ngay neu mat phao
+                    # 1. Cap nhat thoi gian nhin thay phao do
                     if bobber_x is not None:
                         last_bobber_seen = cur_t
-                    else:
-                        # Khi khong thay phao do, kiem tra ngay nut "Nhan Ngay" da hien chua (nhu khi ca nho chi can 2 nhip)
-                        if cur_t - last_claim_check > 0.12:
-                            last_claim_check = cur_t
-                            claim_bgr = safe_grab(sct, claim_box)
-                            if claim_bgr is not None:
-                                c_hsv = cv2.cvtColor(claim_bgr, cv2.COLOR_BGR2HSV)
-                                c_green = cv2.inRange(
-                                    c_hsv,
-                                    np.array(config.HSV_READY_GREEN_LOWER, dtype=np.uint8),
-                                    np.array(config.HSV_READY_GREEN_UPPER, dtype=np.uint8),
-                                )
-                                if np.count_nonzero(c_green) > 300:
-                                    log(f"[3/4] Phat hien nut Nhan Ngay ({np.count_nonzero(c_green)}px xanh). Ket thuc minigame!")
-                                    state = "CLAIM_REWARD"
-                                    break
+
+                    # Kiem tra dinh ky nut Nhan Ngay moi 0.15s (ke ca khi phao chua mat, de phong popup hien de)
+                    if cur_t - last_claim_check > 0.15:
+                        last_claim_check = cur_t
+                        claim_bgr = safe_grab(sct, claim_box)
+                        if claim_bgr is not None:
+                            c_hsv = cv2.cvtColor(claim_bgr, cv2.COLOR_BGR2HSV)
+                            c_green = cv2.inRange(
+                                c_hsv,
+                                np.array(config.HSV_READY_GREEN_LOWER, dtype=np.uint8),
+                                np.array(config.HSV_READY_GREEN_UPPER, dtype=np.uint8),
+                            )
+                            if np.count_nonzero(c_green) > 250:
+                                log(f"[3/4] Phat hien nut Nhan Ngay ({np.count_nonzero(c_green)}px xanh). Ket thuc minigame!")
+                                state = "CLAIM_REWARD"
+                                break
 
                     # 2. Neu minigame da chay > 0.4s ma khong he thay phao do > 0.65s -> Tran da ket thuc!
                     if (cur_t - minigame_start > 0.4) and (cur_t - last_bobber_seen > 0.65):
@@ -1057,13 +1064,13 @@ def main():
                         state = "CLAIM_REWARD"
                         break
 
-                    # 3. Kiem tra mat thanh truot
-                    if yellow_range is None and locked_yellow is None:
+                    # 3. Kiem tra mat thanh truot (chi can khong thay o vang tren man hinh la tinh timeout ket thuc)
+                    if yellow_range is None:
                         if no_slider_since == 0.0:
                             no_slider_since = cur_t
-                        slider_timeout = 0.35 if hit_count >= 2 else 0.85
+                        slider_timeout = 0.35 if hit_count >= 2 else 0.70
                         if cur_t - no_slider_since > slider_timeout:
-                            log(f"[3/4] Keo ca hoan tat ({hit_count} Hoan Hao). Nhan thuong...")
+                            log(f"[3/4] Keo ca hoan tat ({hit_count} Hoan Hao, thanh truot ket thuc). Nhan thuong...")
                             state = "CLAIM_REWARD"
                             break
                     else:
@@ -1144,23 +1151,31 @@ def main():
             # BUOC 4: NHAN QUA / DONG POPUP (CLAIM_REWARD)
             # =========================================================
             elif state == "CLAIM_REWARD":
-                log("[4/4] Cho hoat anh ca (0.6s)...")
-                if sleep_check(0.6):
+                log("[4/4] Cho hoat anh ca (1.0s)...")
+                if sleep_check(1.0):
                     continue
 
-                # Nhip 1: Cham truc tiep vao tam the (Rel Y = 0.480) de dong the "Ky Luc Doi Moi", "Ca Moi"
-                touch_tap(card_screen_x, card_screen_y, desc="Dong the ky luc (Nhip 1)")
-                if sleep_check(0.35):
-                    continue
+                # Chuoi cham 3 diem an toan da tang (Tam the -> Nut giua -> Nut day)
+                # Giup dong triet de moi popup: Ca Lam, Ky Luc Moi, Ca Moi, Chia Se ke ca tren may giat lag 2GB RAM
+                for attempt in range(4):
+                    # Nhip 1: Cham tam the bai ky luc / ca moi (Rel Y = 0.480)
+                    touch_tap(card_screen_x, card_screen_y, desc=f"Dong the bai (Lan {attempt + 1})")
+                    if sleep_check(0.25):
+                        break
 
-                # Nhip 2: Cham nut "Nhan Ngay" (Rel Y = 0.870) cua man hinh ca thuong
-                touch_tap(claim_screen_x, claim_screen_y, desc="Nhan Ngay (Nhip 2)")
-                if sleep_check(0.35):
-                    continue
+                    # Nhip 2: Cham nut xac nhan / tiep tuc giua man hinh (Rel Y = 0.720)
+                    touch_tap(card_screen_x, card_confirm_y, desc=f"Cham xac nhan giua (Lan {attempt + 1})")
+                    if sleep_check(0.25):
+                        break
 
-                # Nhip 3: Xac nhan dong - neu nut Nhan Ngay van con thi bam tiep den khi dong han
-                for retry in range(3):
+                    # Nhip 3: Cham nut Nhan Ngay o day (Rel Y = 0.870)
+                    touch_tap(claim_screen_x, claim_screen_y, desc=f"Nhan Ngay (Lan {attempt + 1})")
+                    if sleep_check(0.35):
+                        break
+
+                    # Kiem tra nut Nhan Ngay xem da bien mat chua
                     claim_bgr = safe_grab(sct, claim_box)
+                    has_green = False
                     if claim_bgr is not None:
                         c_hsv = cv2.cvtColor(claim_bgr, cv2.COLOR_BGR2HSV)
                         c_green = cv2.inRange(
@@ -1168,18 +1183,20 @@ def main():
                             np.array(config.HSV_READY_GREEN_LOWER, dtype=np.uint8),
                             np.array(config.HSV_READY_GREEN_UPPER, dtype=np.uint8),
                         )
-                        if np.count_nonzero(c_green) > 300:
-                            log(f"  -> Popup van con ({np.count_nonzero(c_green)}px xanh), bam tiep lan {retry + 1}...")
-                            touch_tap(claim_screen_x, claim_screen_y, desc="Nhan Ngay bo sung")
-                            if sleep_check(0.35):
-                                break
-                        else:
-                            break
+                        has_green = np.count_nonzero(c_green) > 250
+
+                    # Neu sau it nhat 1 lan cham ma khong con nut Nhan Ngay: kiem tra xem nut can cau tren bo da xuat hien chua
+                    if not has_green and attempt >= 1:
+                        btn_bgr_chk = safe_grab(sct, btn_box)
+                        if btn_bgr_chk is not None:
+                            chk_g, chk_gr, chk_p = analyze_button_colors(btn_bgr_chk)
+                            if chk_g > config.GREEN_PX_THRESHOLD or chk_gr > config.GREY_PX_THRESHOLD:
+                                break  # Game da quay ve ho cau thanh cong!
 
                 fish_count += 1
-                log(f"[4/4] Nhan thuong thanh cong! Ca thu: {fish_count}")
+                log(f"[4/4] Nhan thuong thanh cong! Tong so ca: {fish_count}")
 
-                if sleep_check(0.4):
+                if sleep_check(0.3):
                     continue
 
                 state = "READY_TO_CAST"
