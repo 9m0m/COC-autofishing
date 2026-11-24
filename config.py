@@ -192,7 +192,7 @@ RALLY_DELAY_AFTER_SCROLL_CLICK: float = 0.40
 RALLY_DELAY_IDLE_SLEEP: float = 0.40
 
 # Thời gian khóa bỏ qua ô đã đầy (4/4) trên Mapview
-RALLY_FULL_TILE_COOLDOWN: float = 15.0
+RALLY_FULL_TILE_COOLDOWN: float = 20.0
 
 # Chế độ hoạt động: False = Focus 100% Tổng Mapview (Khuyên dùng); True = Quét cả Chat
 RALLY_ENABLE_CHAT_SCAN: bool = False
