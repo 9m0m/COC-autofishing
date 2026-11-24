@@ -366,8 +366,8 @@ def scan_and_join_map_rallies(sct: mss.MSS, vp: Tuple[int, int, int, int], hwnd:
     map_gray = cv2.cvtColor(map_crop, cv2.COLOR_BGR2GRAY)
 
     matches = []
-    scale_factors = getattr(config, "RALLY_SCALE_FACTORS", [1.00, 1.04, 0.96, 1.08, 0.92, 1.12, 0.88, 0.80, 0.72, 0.67, 1.20, 1.28])
-    match_thresh = getattr(config, "RALLY_MATCH_THRESHOLD", 0.62)
+    scale_factors = getattr(config, "RALLY_SCALE_FACTORS", [1.00, 1.04, 0.96, 1.08, 0.92, 1.12, 0.88, 0.84, 0.80, 0.72, 0.67, 1.20, 1.28])
+    match_thresh = getattr(config, "RALLY_MATCH_THRESHOLD", 0.52)
 
     best_val = 0.0
     for tname, tpl in _rally_templates:
