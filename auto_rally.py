@@ -48,6 +48,7 @@ _last_logged_pillarbox: Optional[Tuple[int, int]] = None
 
 # He thong Template tieu de 'Tong Tan Cong!' cho 4 phe dia hinh (Vang, Xanh, Do, Tim) tren Mapview
 _rally_templates = assets.get_rally_templates()
+_timer_template = assets.get_rally_timer_template()
 
 
 def detect_pillarbox(crop: np.ndarray, black_thresh: Optional[float] = None, min_margin: Optional[int] = None) -> Tuple[int, int]:
@@ -365,11 +366,49 @@ def scan_and_join_map_rallies(sct: mss.MSS, vp: Tuple[int, int, int, int], hwnd:
 
     map_gray = cv2.cvtColor(map_crop, cv2.COLOR_BGR2GRAY)
 
-    matches = []
+    candidates: List[Tuple[int, int, Tuple[int, int], str, float]] = []
     scale_factors = getattr(config, "RALLY_SCALE_FACTORS", [1.00, 1.04, 0.96, 1.08, 0.92, 1.12, 0.88, 0.84, 0.80, 0.72, 0.67, 1.20, 1.28])
     match_thresh = getattr(config, "RALLY_MATCH_THRESHOLD", 0.52)
-
     best_val = 0.0
+
+    # 1. ENGINE 1: Universal Timer Pill (Đa ngôn ngữ 100%: Bắt các số mm:ss trên nền đen viền vàng)
+    timer_tpl = _timer_template or assets.get_rally_timer_template()
+    if timer_tpl is not None:
+        t_th, t_tw = timer_tpl.shape[:2]
+        timer_thresh = getattr(config, "RALLY_TIMER_MATCH_THRESHOLD", 0.52)
+        avatar_offset_ratio = getattr(config, "RALLY_TIMER_AVATAR_OFFSET_Y", 0.85)
+
+        for cur_sc in scale_factors:
+            cur_tw = max(15, int(t_tw * cur_sc))
+            cur_th = max(10, int(t_th * cur_sc))
+            if cur_tw >= map_crop.shape[1] or cur_th >= map_crop.shape[0]:
+                continue
+
+            scaled_timer = cv2.resize(
+                timer_tpl,
+                (cur_tw, cur_th),
+                interpolation=cv2.INTER_AREA if cur_sc < 1.0 else cv2.INTER_LINEAR,
+            )
+            res_timer = cv2.matchTemplate(map_crop, scaled_timer, cv2.TM_CCOEFF_NORMED)
+            _, max_t, _, _ = cv2.minMaxLoc(res_timer)
+            if max_t > best_val:
+                best_val = float(max_t)
+
+            locs_timer = np.where(res_timer >= timer_thresh)
+            for pt in zip(*locs_timer[::-1]):
+                tx, ty = int(pt[0]), int(pt[1])
+                score = float(res_timer[ty, tx])
+
+                # Click rơi thẳng vào TÂM AVATAR (dịch ngược lên trên thanh timer)
+                click_x = int(gw_l + tx + cur_tw // 2)
+                click_y = int(my1 + ty - int(cur_th * avatar_offset_ratio))
+                tile = (click_x, click_y)
+
+                # NMS lọc trùng: nếu ô avatar này đã được thêm trong bán kính 35px thì bỏ qua
+                if not any(abs(c[0] - click_x) < 35 and abs(c[1] - click_y) < 35 for c in candidates):
+                    candidates.append((click_x, click_y, tile, f"TimerPill_{cur_sc:.2f}", score))
+
+    # 2. ENGINE 2: Banner Text Templates (Dự phòng bổ trợ cho Tiếng Việt)
     for tname, tpl in _rally_templates:
         is_clean = ("clean" in tname)
         tpl_th, tpl_tw = tpl.shape[:2]
@@ -403,31 +442,31 @@ def scan_and_join_map_rallies(sct: mss.MSS, vp: Tuple[int, int, int, int], hwnd:
             locs = np.where(res >= match_thresh)
             for pt in zip(*locs[::-1]):
                 x, y = int(pt[0]), int(pt[1])
-                if not any(abs(m[0] - x) < cur_tw * 0.6 and abs(m[1] - y) < cur_th * 0.6 for m in matches):
-                    faction = tname
-                    if is_clean:
-                        local_crop = map_crop[max(0, y):min(map_crop.shape[0], y + cur_th + int(cur_th * 1.5)), max(0, x):min(map_crop.shape[1], x + cur_tw)]
-                        faction = _detect_faction_name(local_crop)
-                    matches.append((x, y, cur_tw, cur_th, faction, float(res[y, x])))
+                score = float(res[y, x])
+                click_x = int(gw_l + x + cur_tw // 2)
+                click_y = int(my1 + y + int(cur_th * 1.85))
+                tile = (click_x, click_y)
+
+                # NMS lọc trùng: nếu đã được phát hiện bởi Engine 1 (Timer) hoặc template khác trong 35px thì bỏ qua
+                if not any(abs(c[0] - click_x) < 35 and abs(c[1] - click_y) < 35 for c in candidates):
+                    candidates.append((click_x, click_y, tile, tname, score))
 
     _last_best_score = best_val
+    candidates.sort(key=lambda c: c[4], reverse=True)
 
-    for x, y, cur_tw, cur_th, faction, score in matches:
+    for click_x, click_y, tile, faction, score in candidates:
         if _is_paused or _stop_event.is_set():
             return None
-
-        # Click truc tiep vao tam AVATAR nguoi choi dang mo Rally (Tranh click viền banner lam cham lech vao o dat phia tren)
-        click_x = int(gw_l + x + cur_tw // 2)
-        click_y = int(my1 + y + int(cur_th * 1.85))
-        tile = (click_x, click_y)
 
         if _is_tile_in_dict(tile, _recently_joined_tiles) or _is_tile_in_dict(tile, _full_tiles_cooldown):
             continue
 
-        ay1 = y + cur_th
-        ay2 = min(map_crop.shape[0], y + cur_th + int(gw_h * 0.08))
-        ax1 = max(0, x - 10)
-        ax2 = min(map_crop.shape[1], x + cur_tw + 10)
+        rel_click_x = click_x - gw_l
+        rel_click_y = click_y - my1
+        ay1 = max(0, rel_click_y - 20)
+        ay2 = min(map_crop.shape[0], rel_click_y + 20)
+        ax1 = max(0, rel_click_x - 30)
+        ax2 = min(map_crop.shape[1], rel_click_x + 30)
         avatar_crop = map_crop[ay1:ay2, ax1:ax2]
 
         if avatar_crop.size > 0:

@@ -158,6 +158,10 @@ RALLY_MATCH_THRESHOLD: float = 0.52
 # Dải tỷ lệ quét đa năng của game mobile dọc (hỗ trợ mọi kích cỡ cửa sổ từ thu nhỏ đến cực đại 1080p/2K)
 RALLY_SCALE_FACTORS = [1.00, 1.04, 0.96, 1.08, 0.92, 1.12, 0.88, 0.80, 0.72, 0.67, 1.20, 1.28]
 
+# Cấu hình nhận diện Universal Timer Pill (Đa ngôn ngữ: mm:ss trên nền đen viền vàng)
+RALLY_TIMER_MATCH_THRESHOLD: float = 0.52
+RALLY_TIMER_AVATAR_OFFSET_Y: float = 0.85  # Tỉ lệ dịch ngược từ đỉnh Timer lên tâm Avatar: click_y = timer_y - int(th * 0.85)
+
 # Ngưỡng nhận diện bảng Tấn Công ô đất (Hình 2 - Không phải Rally, cần tự đóng về Mapview)
 RALLY_TILE_ATTACK_YELLOW_PX: int = 1500  # Nút vàng "Tấn Công" góc dưới bên phải
 RALLY_TILE_ATTACK_RED_PX: int = 1500     # Thanh máu phòng thủ đỏ "Quân phòng thủ"
