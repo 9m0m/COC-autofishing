@@ -1112,8 +1112,12 @@ def main():
                             c_start, c_end = yellow_range
                             c_center = (c_start + c_end) / 2
                             l_center = (l_start + l_end) / 2
-                            if abs(c_center - l_center) < 30:
+                            if abs(c_center - l_center) < 45:
                                 locked_yellow = (min(l_start, c_start), max(l_end, c_end))
+                                l_start, l_end = locked_yellow
+                            else:
+                                # Neu o vang da dich chuyen sang vi tri moi (ca hiem doi chieu)
+                                locked_yellow = (c_start, c_end)
                                 l_start, l_end = locked_yellow
 
                         y_width = l_end - l_start
@@ -1122,8 +1126,8 @@ def main():
                             # Kiem tra truc tiep: Phao nam trong o vang da khoa
                             inside = (l_start <= bobber_x <= l_end)
 
-                            # Continuous Sweep: Quet doan duong di chuyen giua 2 frame (gioi han buoc nhay <= 35px)
-                            if prev_bobber_x is not None and abs(bobber_x - prev_bobber_x) <= 35:
+                            # Continuous Sweep: Quet doan duong di chuyen giua 2 frame (tang tolerance len 85px cho ca hiem toc do cao)
+                            if prev_bobber_x is not None and abs(bobber_x - prev_bobber_x) <= 85:
                                 move_min = min(prev_bobber_x, bobber_x)
                                 move_max = max(prev_bobber_x, bobber_x)
                                 crossed = max(move_min, l_start) <= min(move_max, l_end)
